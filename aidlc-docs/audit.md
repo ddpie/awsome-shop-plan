@@ -723,3 +723,50 @@
 **用户输入**: "回答完成"
 **AI响应**: 读取回答：Q1=A（Nginx容器托管静态文件）、Q2=B（端口3000）、Q3=A（Nginx反向代理/api/*到api-gateway:8080）、Q4=C（不缓存，开发阶段）、Q5=A（需要健康检查）。所有回答清晰无歧义。生成2份基础设施设计文档：infrastructure-design.md（Dockerfile多阶段构建、Nginx配置含SPA路由+API代理+Gzip+健康检查、Docker Compose服务定义、环境变量、服务依赖、目录结构）、deployment-architecture.md（完整部署拓扑7个服务、端口分配汇总、启动流程时序图、6条请求流转路径、故障恢复、开发调试命令、生产环境注意事项）。同步更新Unit 7 Docker Compose：frontend端口80→3000、添加健康检查、更新Nginx配置（添加Gzip/健康检查端点/开发阶段不缓存）。等待用户审批。
 **上下文**: CONSTRUCTION - Unit 1 基础设施设计完成，所有7个Unit设计阶段全部完成，等待用户审批
+
+---
+
+## 会话恢复
+**时间戳**: 2026-02-10T10:00:00Z
+**用户输入**: "使用AIDLC"
+**AI响应**: 检测到现有 AI-DLC 项目（AWSomeShop）。加载通用规则文件（process-overview.md、session-continuity.md、content-validation.md、question-format-guide.md）。读取 aidlc-state.md 和 execution-plan.md 确认当前进度。项目处于 CONSTRUCTION 阶段，所有7个 Unit 的设计阶段（功能设计、NFR需求、NFR设计、基础设施设计）均已完成，下一步为代码生成阶段。向用户展示欢迎回来提示。
+**上下文**: 会话恢复 - 项目继续
+
+---
+
+## GitHub 仓库创建
+**时间戳**: 2026-02-10T10:05:00Z
+**用户输入**: "请在github中，对不同的微服务，创建不同的仓库，仓库名称使用 awsome-shop开头"
+**AI响应**: 确认 GitHub 账户 catface996，询问仓库可见性，用户选择 Private。为 7 个工作单元创建独立私有仓库，全部成功：
+- awsome-shop-frontend (Unit 1)
+- awsome-shop-auth-service (Unit 2)
+- awsome-shop-product-service (Unit 3)
+- awsome-shop-points-service (Unit 4)
+- awsome-shop-order-service (Unit 5)
+- awsome-shop-api-gateway (Unit 6)
+- awsome-shop-infrastructure (Unit 7)
+**上下文**: 代码生成准备 - GitHub 仓库创建完成
+
+---
+
+## GitHub 仓库调整
+**时间戳**: 2026-02-10T10:10:00Z
+**用户输入**: "awsome-shop-infrastructure 这个仓库没有必要，你觉得ne"
+**AI响应**: 同意用户观点，Unit 7 基础设施内容（docker-compose.yml、init.sql、.env）体量小，单独仓库多余。询问用户基础设施文件归属，用户选择新建 awsome-shop-deploy 轻量部署编排仓库。已创建 awsome-shop-deploy，删除 awsome-shop-infrastructure 因权限不足，用户表示手动删除。
+**最终仓库清单**:
+- awsome-shop-frontend (Unit 1)
+- awsome-shop-auth-service (Unit 2)
+- awsome-shop-product-service (Unit 3)
+- awsome-shop-points-service (Unit 4)
+- awsome-shop-order-service (Unit 5)
+- awsome-shop-api-gateway (Unit 6)
+- awsome-shop-deploy (替代原 awsome-shop-infrastructure)
+**上下文**: 代码生成准备 - GitHub 仓库调整完成
+
+---
+
+## 会话恢复 - 项目全貌分析
+**时间戳**: 2026-02-10T12:00:00Z
+**用户输入**: "分析当前项，是一个积分系统，支持员工做积分兑换商品等，使用AIDLC来做完整的理解"
+**AI响应**: 检测到现有 AI-DLC 项目（AWSomeShop）。加载通用规则文件和项目状态。项目处于 CONSTRUCTION 阶段，所有7个 Unit 的设计阶段均已完成，下一步为代码生成。向用户展示项目全貌分析。
+**上下文**: 会话恢复 - 项目全貌分析
