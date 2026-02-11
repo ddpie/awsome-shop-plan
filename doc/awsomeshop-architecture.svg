@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1020" width="1400" height="1020">
+  <defs>
+    <!-- Subtle grid pattern for background -->
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E8ECF0" stroke-width="0.3"/>
+    </pattern>
+    <!-- Drop shadow for cards -->
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1A2332" flood-opacity="0.08"/>
+    </filter>
+    <filter id="shadow-lg" x="-3%" y="-3%" width="106%" height="112%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1A2332" flood-opacity="0.10"/>
+    </filter>
+    <!-- Arrowhead markers -->
+    <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L4,6 L7,1" fill="none" stroke="#8896A7" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-right" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L6,4 L1,7" fill="none" stroke="#8896A7" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-cross" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L6,4 L1,7" fill="none" stroke="#E07850" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- ============================================ -->
+  <!--  BACKGROUND                                  -->
+  <!-- ============================================ -->
+  <rect width="1400" height="1020" fill="#F5F7FA"/>
+  <rect width="1400" height="1020" fill="url(#grid)"/>
+
+  <!-- ============================================ -->
+  <!--  TITLE AREA                                  -->
+  <!-- ============================================ -->
+  <text x="60" y="52" font-family="'Instrument Sans', 'Helvetica Neue', sans-serif" font-size="22" font-weight="700" fill="#1A2332" letter-spacing="-0.5">AWSomeShop</text>
+  <text x="228" y="52" font-family="'Instrument Sans', 'Helvetica Neue', sans-serif" font-size="22" font-weight="400" fill="#6B7A8D" letter-spacing="-0.5">System Architecture</text>
+  <line x1="60" y1="66" x2="520" y2="66" stroke="#D0D8E0" stroke-width="0.8"/>
+  <text x="60" y="84" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#8896A7" letter-spacing="0.5">MICROSERVICES  ·  API GATEWAY  ·  DOCKER COMPOSE  ·  MVP v1.0</text>
+
+  <!-- ============================================ -->
+  <!--  LEGEND (top-right)                          -->
+  <!-- ============================================ -->
+  <g transform="translate(980, 30)">
+    <rect x="0" y="0" width="370" height="72" rx="8" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="0.5"/>
+    <text x="16" y="20" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#8896A7" letter-spacing="1">LEGEND</text>
+    <!-- Row 1 -->
+    <line x1="16" y1="38" x2="40" y2="38" stroke="#8896A7" stroke-width="1.4"/>
+    <text x="48" y="42" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#6B7A8D">Request Flow</text>
+    <line x1="140" y1="38" x2="164" y2="38" stroke="#E07850" stroke-width="1.4" stroke-dasharray="4,3"/>
+    <text x="172" y="42" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#6B7A8D">Cross-Service Call</text>
+    <!-- Row 2 -->
+    <rect x="16" y="50" width="10" height="10" rx="2" fill="#3B82F6" opacity="0.15" stroke="#3B82F6" stroke-width="0.5"/>
+    <text x="32" y="59" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#6B7A8D">Service</text>
+    <rect x="140" y="50" width="10" height="10" rx="2" fill="#F59E0B" opacity="0.15" stroke="#F59E0B" stroke-width="0.5"/>
+    <text x="156" y="59" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#6B7A8D">Gateway</text>
+    <rect x="244" y="50" width="10" height="10" rx="2" fill="#10B981" opacity="0.15" stroke="#10B981" stroke-width="0.5"/>
+    <text x="260" y="59" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#6B7A8D">Database</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!--  STRATUM LABELS (left edge)                  -->
+  <!-- ============================================ -->
+  <g font-family="'IBM Plex Mono', monospace" font-size="9" fill="#B0BACA" letter-spacing="1.5" text-anchor="end">
+    <text x="44" y="166" transform="rotate(-90, 44, 166)">CLIENT</text>
+    <text x="44" y="338" transform="rotate(-90, 44, 338)">PROXY</text>
+    <text x="44" y="488" transform="rotate(-90, 44, 488)">GATEWAY</text>
+    <text x="44" y="666" transform="rotate(-90, 44, 666)">SERVICES</text>
+    <text x="44" y="882" transform="rotate(-90, 44, 882)">DATA</text>
+  </g>
+
+  <!-- Stratum divider lines -->
+  <line x1="56" y1="230" x2="1350" y2="230" stroke="#D0D8E0" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <line x1="56" y1="380" x2="1350" y2="380" stroke="#D0D8E0" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <line x1="56" y1="540" x2="1350" y2="540" stroke="#D0D8E0" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <line x1="56" y1="790" x2="1350" y2="790" stroke="#D0D8E0" stroke-width="0.5" stroke-dasharray="6,4"/>
+
+  <!-- ============================================ -->
+  <!--  LAYER 1: CLIENT — Users + Frontend          -->
+  <!-- ============================================ -->
+  <!-- Employee -->
+  <g transform="translate(280, 120)">
+    <rect x="0" y="0" width="160" height="90" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="0.8"/>
+    <!-- User icon -->
+    <circle cx="36" cy="34" r="10" fill="none" stroke="#6366F1" stroke-width="1.5"/>
+    <path d="M22,58 Q22,46 36,46 Q50,46 50,58" fill="none" stroke="#6366F1" stroke-width="1.5"/>
+    <text x="64" y="32" font-family="'Instrument Sans', sans-serif" font-size="13" font-weight="600" fill="#1A2332">Employee</text>
+    <text x="64" y="48" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#8896A7">Browse · Redeem</text>
+    <text x="12" y="78" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#B0BACA">Points balance · Order history</text>
+  </g>
+
+  <!-- Admin -->
+  <g transform="translate(520, 120)">
+    <rect x="0" y="0" width="160" height="90" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="0.8"/>
+    <!-- Admin icon -->
+    <circle cx="36" cy="34" r="10" fill="none" stroke="#DC2626" stroke-width="1.5"/>
+    <path d="M22,58 Q22,46 36,46 Q50,46 50,58" fill="none" stroke="#DC2626" stroke-width="1.5"/>
+    <rect x="42" y="26" width="8" height="8" rx="1.5" fill="none" stroke="#DC2626" stroke-width="1.2"/>
+    <text x="64" y="32" font-family="'Instrument Sans', sans-serif" font-size="13" font-weight="600" fill="#1A2332">Admin</text>
+    <text x="64" y="48" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#8896A7">Manage · Config</text>
+    <text x="12" y="78" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#B0BACA">Products · Points · Orders</text>
+  </g>
+
+  <!-- Frontend SPA -->
+  <g transform="translate(780, 120)">
+    <rect x="0" y="0" width="280" height="90" rx="10" fill="#EFF6FF" filter="url(#shadow)" stroke="#93C5FD" stroke-width="0.8"/>
+    <rect x="0" y="0" width="280" height="26" rx="10" fill="#3B82F6"/>
+    <rect x="0" y="14" width="280" height="12" fill="#3B82F6"/>
+    <text x="14" y="18" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" letter-spacing="0.3">FRONTEND SPA</text>
+    <text x="230" y="18" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#BFDBFE">:3000</text>
+    <!-- Module pills -->
+    <g transform="translate(12, 36)">
+      <rect x="0" y="0" width="52" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="26" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Auth</text>
+      <rect x="58" y="0" width="62" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="89" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Product</text>
+      <rect x="126" y="0" width="56" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="154" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Points</text>
+      <rect x="188" y="0" width="56" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="216" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Order</text>
+    </g>
+    <g transform="translate(12, 58)">
+      <rect x="0" y="0" width="52" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="26" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Admin</text>
+      <rect x="58" y="0" width="62" height="18" rx="9" fill="#DBEAFE" stroke="#93C5FD" stroke-width="0.5"/>
+      <text x="89" y="12.5" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">Common</text>
+    </g>
+    <text x="142" y="82" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#93C5FD">localStorage (JWT)</text>
+  </g>
+
+  <!-- Connection: Users → Frontend -->
+  <line x1="440" y1="165" x2="770" y2="165" stroke="#8896A7" stroke-width="1.2" marker-end="url(#arrow-right)"/>
+  <text x="580" y="158" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#B0BACA">Browser</text>
+  <line x1="680" y1="165" x2="770" y2="165" stroke="#8896A7" stroke-width="1.2"/>
+
+  <!-- ============================================ -->
+  <!--  LAYER 2: PROXY — Nginx                      -->
+  <!-- ============================================ -->
+  <g transform="translate(380, 270)">
+    <rect x="0" y="0" width="640" height="80" rx="10" fill="#FFFFFF" filter="url(#shadow-lg)" stroke="#E2E8F0" stroke-width="0.8"/>
+    <rect x="0" y="0" width="640" height="24" rx="10" fill="#64748B"/>
+    <rect x="0" y="12" width="640" height="12" fill="#64748B"/>
+    <text x="16" y="17" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF" letter-spacing="0.5">NGINX</text>
+    <text x="76" y="17" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#CBD5E1">Reverse Proxy + Static Server</text>
+    <!-- Feature pills -->
+    <g transform="translate(16, 36)">
+      <rect x="0" y="0" width="120" height="20" rx="4" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+      <text x="60" y="13.5" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#475569" text-anchor="middle">SPA Routing</text>
+      <rect x="130" y="0" width="160" height="20" rx="4" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+      <text x="210" y="13.5" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#475569" text-anchor="middle">/api/* → Gateway:8080</text>
+      <rect x="300" y="0" width="100" height="20" rx="4" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+      <text x="350" y="13.5" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#475569" text-anchor="middle">Gzip</text>
+      <rect x="410" y="0" width="130" height="20" rx="4" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="0.5"/>
+      <text x="475" y="13.5" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#475569" text-anchor="middle">10MB Upload Limit</text>
+    </g>
+    <text x="16" y="72" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#94A3B8">try_files $uri $uri/ /index.html</text>
+  </g>
+
+  <!-- Connection: Frontend → Nginx -->
+  <line x1="920" y1="210" x2="920" y2="260" stroke="#8896A7" stroke-width="1.2" marker-end="url(#arrow-down)"/>
+  <text x="928" y="240" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#B0BACA">HTTP</text>
+
+  <!-- ============================================ -->
+  <!--  LAYER 3: GATEWAY — API Gateway               -->
+  <!-- ============================================ -->
+  <g transform="translate(280, 410)">
+    <rect x="0" y="0" width="840" height="100" rx="12" fill="#FFFBEB" filter="url(#shadow-lg)" stroke="#FCD34D" stroke-width="1"/>
+    <rect x="0" y="0" width="840" height="28" rx="12" fill="#F59E0B"/>
+    <rect x="0" y="14" width="840" height="14" fill="#F59E0B"/>
+    <text x="20" y="20" font-family="'Instrument Sans', sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" letter-spacing="0.3">API GATEWAY</text>
+    <text x="770" y="20" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#FEF3C7">:8080</text>
+    <!-- Three responsibility columns -->
+    <g transform="translate(20, 40)">
+      <!-- JWT Validation -->
+      <rect x="0" y="0" width="250" height="44" rx="6" fill="#FEF9C3" stroke="#FDE68A" stroke-width="0.5"/>
+      <text x="12" y="16" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#92400E">JWT Validation</text>
+      <text x="12" y="32" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#A16207">HS256 · Signature · Expiry · Payload</text>
+      <!-- Role-Based Access -->
+      <rect x="264" y="0" width="260" height="44" rx="6" fill="#FEF9C3" stroke="#FDE68A" stroke-width="0.5"/>
+      <text x="276" y="16" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#92400E">Role-Based Access Control</text>
+      <text x="276" y="32" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#A16207">/api/admin/* → ADMIN role required</text>
+      <!-- Request Routing -->
+      <rect x="538" y="0" width="280" height="44" rx="6" fill="#FEF9C3" stroke="#FDE68A" stroke-width="0.5"/>
+      <text x="550" y="16" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#92400E">Request Routing</text>
+      <text x="550" y="32" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#A16207">URL prefix → target service (Docker DNS)</text>
+    </g>
+    <!-- Performance note -->
+    <text x="20" y="94" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#D97706">Stateless · P95 overhead ≤ 50ms · Connect 1s / Read 2s timeout · X-User-Id + X-User-Role injection</text>
+  </g>
+
+  <!-- Connection: Nginx → Gateway -->
+  <line x1="700" y1="350" x2="700" y2="400" stroke="#8896A7" stroke-width="1.2" marker-end="url(#arrow-down)"/>
+  <text x="708" y="380" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#B0BACA">/api/*</text>
+
+  <!-- ============================================ -->
+  <!--  LAYER 4: MICROSERVICES                       -->
+  <!-- ============================================ -->
+
+  <!-- Routing lines from Gateway to Services -->
+  <!-- Gateway → auth-service -->
+  <line x1="380" y1="510" x2="200" y2="580" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <text x="260" y="544" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#B0BACA">/api/auth/*</text>
+  <!-- Gateway → product-service -->
+  <line x1="540" y1="510" x2="490" y2="580" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <text x="492" y="548" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#B0BACA">/api/products/*</text>
+  <!-- Gateway → points-service -->
+  <line x1="860" y1="510" x2="900" y2="580" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <text x="856" y="548" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#B0BACA">/api/points/*</text>
+  <!-- Gateway → order-service -->
+  <line x1="1020" y1="510" x2="1190" y2="580" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <text x="1094" y="548" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#B0BACA">/api/orders/*</text>
+
+  <!-- === auth-service === -->
+  <g transform="translate(88, 580)">
+    <rect x="0" y="0" width="232" height="170" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#93C5FD" stroke-width="1"/>
+    <rect x="0" y="0" width="232" height="28" rx="10" fill="#3B82F6"/>
+    <rect x="0" y="14" width="232" height="14" fill="#3B82F6"/>
+    <text x="14" y="19" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">auth-service</text>
+    <text x="182" y="19" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#BFDBFE">:8001</text>
+    <!-- Components -->
+    <g transform="translate(12, 38)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">COMPONENTS</text>
+      <rect x="0" y="18" width="70" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="35" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-AUTH</text>
+      <rect x="76" y="18" width="66" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="109" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-USER</text>
+      <rect x="148" y="18" width="62" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="179" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">DA-USER</text>
+    </g>
+    <!-- Features -->
+    <g transform="translate(12, 86)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">CAPABILITIES</text>
+      <text x="0" y="26" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Register · Login · JWT Generation</text>
+      <text x="0" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">bcrypt (cost=10) · HS256</text>
+      <text x="0" y="54" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">User CRUD · Role Management</text>
+    </g>
+    <!-- DB tag -->
+    <rect x="12" y="148" width="70" height="14" rx="3" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.5"/>
+    <text x="47" y="158" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#166534" text-anchor="middle">auth_db</text>
+  </g>
+
+  <!-- === product-service === -->
+  <g transform="translate(358, 580)">
+    <rect x="0" y="0" width="252" height="170" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#93C5FD" stroke-width="1"/>
+    <rect x="0" y="0" width="252" height="28" rx="10" fill="#3B82F6"/>
+    <rect x="0" y="14" width="252" height="14" fill="#3B82F6"/>
+    <text x="14" y="19" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">product-service</text>
+    <text x="198" y="19" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#BFDBFE">:8002</text>
+    <!-- Components -->
+    <g transform="translate(12, 38)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">COMPONENTS</text>
+      <rect x="0" y="18" width="66" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="33" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-PROD</text>
+      <rect x="72" y="18" width="68" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="106" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-CATEG</text>
+      <rect x="146" y="18" width="56" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="174" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-FILE</text>
+    </g>
+    <!-- Features -->
+    <g transform="translate(12, 86)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">CAPABILITIES</text>
+      <text x="0" y="26" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Product CRUD · Multi-level Category</text>
+      <text x="0" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Search · Stock Management</text>
+      <text x="0" y="54" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">File Upload (local volume)</text>
+    </g>
+    <!-- DB tag -->
+    <rect x="12" y="148" width="82" height="14" rx="3" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.5"/>
+    <text x="53" y="158" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#166534" text-anchor="middle">product_db</text>
+  </g>
+
+  <!-- === points-service === -->
+  <g transform="translate(780, 580)">
+    <rect x="0" y="0" width="248" height="170" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#93C5FD" stroke-width="1"/>
+    <rect x="0" y="0" width="248" height="28" rx="10" fill="#3B82F6"/>
+    <rect x="0" y="14" width="248" height="14" fill="#3B82F6"/>
+    <text x="14" y="19" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">points-service</text>
+    <text x="194" y="19" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#BFDBFE">:8003</text>
+    <!-- Components -->
+    <g transform="translate(12, 38)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">COMPONENTS</text>
+      <rect x="0" y="18" width="74" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="37" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-POINTS</text>
+      <rect x="80" y="18" width="72" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="116" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-SCHED</text>
+      <rect x="158" y="18" width="68" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="192" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">DA-POINT</text>
+    </g>
+    <!-- Features -->
+    <g transform="translate(12, 86)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">CAPABILITIES</text>
+      <text x="0" y="26" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Balance · Transaction History</text>
+      <text x="0" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Auto-Distribution (Cron)</text>
+      <text x="0" y="54" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Manual Adjust · Deduct · Rollback</text>
+    </g>
+    <!-- DB tag -->
+    <rect x="12" y="148" width="80" height="14" rx="3" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.5"/>
+    <text x="52" y="158" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#166534" text-anchor="middle">points_db</text>
+  </g>
+
+  <!-- === order-service === -->
+  <g transform="translate(1068, 580)">
+    <rect x="0" y="0" width="248" height="170" rx="10" fill="#FFFFFF" filter="url(#shadow)" stroke="#F9A8D4" stroke-width="1"/>
+    <rect x="0" y="0" width="248" height="28" rx="10" fill="#3B82F6"/>
+    <rect x="0" y="14" width="248" height="14" fill="#3B82F6"/>
+    <text x="14" y="19" font-family="'Instrument Sans', sans-serif" font-size="11" font-weight="600" fill="#FFFFFF">order-service</text>
+    <text x="198" y="19" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#BFDBFE">:8004</text>
+    <!-- Components -->
+    <g transform="translate(12, 38)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">COMPONENTS</text>
+      <rect x="0" y="18" width="74" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="37" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">BE-ORDER</text>
+      <rect x="80" y="18" width="74" height="18" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+      <text x="117" y="30" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#2563EB" text-anchor="middle">DA-ORDER</text>
+    </g>
+    <!-- Features -->
+    <g transform="translate(12, 86)">
+      <text x="0" y="10" font-family="'IBM Plex Mono', monospace" font-size="8.5" fill="#6B7A8D" letter-spacing="0.5">CAPABILITIES</text>
+      <text x="0" y="26" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Redemption Flow (core)</text>
+      <text x="0" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Saga Compensation · Pessimistic Lock</text>
+      <text x="0" y="54" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#64748B">Status Mgmt · Cross-Service Calls</text>
+    </g>
+    <!-- DB tag -->
+    <rect x="12" y="148" width="72" height="14" rx="3" fill="#DCFCE7" stroke="#86EFAC" stroke-width="0.5"/>
+    <text x="48" y="158" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#166534" text-anchor="middle">order_db</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!--  CROSS-SERVICE CALLS (order → product/points) -->
+  <!-- ============================================ -->
+  <!-- order → product (stock check / deduction) -->
+  <path d="M1068,765 C900,780 750,780 610,765" fill="none" stroke="#E07850" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arrow-cross)"/>
+  <g transform="translate(766, 770)">
+    <rect x="0" y="0" width="120" height="16" rx="3" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.5"/>
+    <text x="60" y="11.5" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#C2410C" text-anchor="middle">Stock check/deduct</text>
+  </g>
+
+  <!-- order → points (balance check / deduction) -->
+  <path d="M1068,770 C1060,785 1040,788 1028,770" fill="none" stroke="#E07850" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arrow-cross)"/>
+  <g transform="translate(1010, 788)">
+    <rect x="0" y="0" width="126" height="16" rx="3" fill="#FFF7ED" stroke="#FDBA74" stroke-width="0.5"/>
+    <text x="63" y="11.5" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#C2410C" text-anchor="middle">Points check/deduct</text>
+  </g>
+
+  <!-- JWT Secret shared line (auth ↔ gateway) -->
+  <g transform="translate(88, 565)">
+    <line x1="116" y1="0" x2="600" y2="-42" stroke="#D97706" stroke-width="0.8" stroke-dasharray="3,3"/>
+    <rect x="300" y="-30" width="110" height="14" rx="3" fill="#FFFBEB" stroke="#FDE68A" stroke-width="0.5"/>
+    <text x="355" y="-20" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#B45309" text-anchor="middle">JWT_SECRET shared</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!--  LAYER 5: DATA — MySQL                        -->
+  <!-- ============================================ -->
+  <g transform="translate(280, 830)">
+    <rect x="0" y="0" width="840" height="140" rx="12" fill="#F0FDF4" filter="url(#shadow-lg)" stroke="#86EFAC" stroke-width="1"/>
+    <rect x="0" y="0" width="840" height="28" rx="12" fill="#10B981"/>
+    <rect x="0" y="14" width="840" height="14" fill="#10B981"/>
+    <text x="20" y="20" font-family="'Instrument Sans', sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" letter-spacing="0.3">MySQL 8.4 LTS</text>
+    <text x="790" y="20" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#D1FAE5">:3306</text>
+    <!-- 4 database boxes -->
+    <g transform="translate(20, 40)">
+      <!-- auth_db -->
+      <rect x="0" y="0" width="185" height="76" rx="6" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="12" y="18" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#065F46">auth_db</text>
+      <line x1="12" y1="24" x2="173" y2="24" stroke="#D1FAE5" stroke-width="0.5"/>
+      <text x="12" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#6B7A8D">users</text>
+      <text x="12" y="54" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">id · username · password_hash</text>
+      <text x="12" y="66" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">name · role · employee_id</text>
+      <!-- product_db -->
+      <rect x="205" y="0" width="195" height="76" rx="6" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="217" y="18" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#065F46">product_db</text>
+      <line x1="217" y1="24" x2="388" y2="24" stroke="#D1FAE5" stroke-width="0.5"/>
+      <text x="217" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#6B7A8D">products · categories</text>
+      <text x="217" y="54" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">name · points · stock · image</text>
+      <text x="217" y="66" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">parent_id (tree structure)</text>
+      <!-- points_db -->
+      <rect x="420" y="0" width="195" height="76" rx="6" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="432" y="18" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#065F46">points_db</text>
+      <line x1="432" y1="24" x2="603" y2="24" stroke="#D1FAE5" stroke-width="0.5"/>
+      <text x="432" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#6B7A8D">point_balances · point_txns</text>
+      <text x="432" y="54" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">system_configs</text>
+      <text x="432" y="66" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">balance · type · amount · reason</text>
+      <!-- order_db -->
+      <rect x="635" y="0" width="185" height="76" rx="6" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="0.8"/>
+      <text x="647" y="18" font-family="'Instrument Sans', sans-serif" font-size="10.5" font-weight="600" fill="#065F46">order_db</text>
+      <line x1="647" y1="24" x2="808" y2="24" stroke="#D1FAE5" stroke-width="0.5"/>
+      <text x="647" y="40" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#6B7A8D">orders</text>
+      <text x="647" y="54" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">user_id · product_id · points</text>
+      <text x="647" y="66" font-family="'IBM Plex Mono', monospace" font-size="7.5" fill="#94A3B8">status · created_at</text>
+    </g>
+    <!-- Bottom info bar -->
+    <text x="20" y="132" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#059669">utf8mb4 · Docker Volume (mysql-data) · Healthcheck: mysqladmin ping · Init: 01~06 SQL scripts</text>
+  </g>
+
+  <!-- Connections: Services → MySQL -->
+  <line x1="204" y1="750" x2="400" y2="822" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <line x1="484" y1="750" x2="580" y2="822" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <line x1="904" y1="750" x2="820" y2="822" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+  <line x1="1192" y1="750" x2="1020" y2="822" stroke="#8896A7" stroke-width="1" marker-end="url(#arrow-down)"/>
+
+  <!-- ============================================ -->
+  <!--  DOCKER ENVELOPE (bottom-right)               -->
+  <!-- ============================================ -->
+  <g transform="translate(980, 118)">
+    <rect x="0" y="0" width="340" height="76" rx="8" fill="#FFFFFF" filter="url(#shadow)" stroke="#E2E8F0" stroke-width="0.5"/>
+    <text x="16" y="20" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#8896A7" letter-spacing="1">DEPLOYMENT</text>
+    <!-- Docker whale mini icon -->
+    <rect x="16" y="30" width="36" height="18" rx="3" fill="#2496ED"/>
+    <text x="34" y="43" font-family="'Instrument Sans', sans-serif" font-size="8" fill="#FFF" text-anchor="middle" font-weight="700">D</text>
+    <text x="60" y="42" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#1A2332">Docker Compose</text>
+    <text x="180" y="42" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#94A3B8">7 containers</text>
+    <text x="16" y="62" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#94A3B8">Bridge network: awsomeshop-net · DNS-based service discovery</text>
+  </g>
+
+  <!-- ============================================ -->
+  <!--  FOOTER: Architecture Patterns                -->
+  <!-- ============================================ -->
+  <g transform="translate(60, 988)">
+    <text x="0" y="0" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#B0BACA" letter-spacing="0.8">PATTERNS</text>
+    <text x="72" y="0" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#94A3B8">Microservices · API Gateway · JWT Stateless Auth · Saga Compensation · Pessimistic Lock · Database-per-Service · Docker Compose · SPA + Reverse Proxy</text>
+  </g>
+  <text x="1350" y="988" font-family="'IBM Plex Mono', monospace" font-size="8" fill="#CBD5E1" text-anchor="end">AWSomeShop MVP v1.0 · 2026</text>
+</svg>
