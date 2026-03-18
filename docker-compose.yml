@@ -54,6 +54,8 @@ services:
     ports:
       - "8002:8002"
     environment:
+      SERVER_PORT: 8002
+      SPRING_PROFILES_ACTIVE: local,docker
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: awsome_shop_product
@@ -75,6 +77,8 @@ services:
     ports:
       - "8003:8003"
     environment:
+      SERVER_PORT: 8003
+      SPRING_PROFILES_ACTIVE: local,docker
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: awsome_shop_point
