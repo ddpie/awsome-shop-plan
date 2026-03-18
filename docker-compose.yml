@@ -1,0 +1,139 @@
+services:
+  # ==================== Infrastructure ====================
+  mysql:
+    image: mysql:8.4
+    container_name: awsome-shop-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: awsome-shop-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ==================== Backend Services ====================
+  auth-service:
+    build: ../awsome-shop-auth-service
+    container_name: awsome-shop-auth
+    ports:
+      - "8001:8001"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: awsome_shop_auth
+      DB_USERNAME: root
+      DB_PASSWORD: root123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: docker-shared-jwt-secret-must-be-at-least-256-bits-long-for-hmac-sha256-signing
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  product-service:
+    build: ../awsome-shop-product-service
+    container_name: awsome-shop-product
+    ports:
+      - "8002:8002"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: awsome_shop_product
+      DB_USERNAME: root
+      DB_PASSWORD: root123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: docker-shared-jwt-secret-must-be-at-least-256-bits-long-for-hmac-sha256-signing
+      ENCRYPTION_KEY: dockerEncryptionKey1234567890abcde
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  points-service:
+    build: ../awsome-shop-points-service
+    container_name: awsome-shop-points
+    ports:
+      - "8003:8003"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: awsome_shop_point
+      DB_USERNAME: root
+      DB_PASSWORD: root123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: docker-shared-jwt-secret-must-be-at-least-256-bits-long-for-hmac-sha256-signing
+      ENCRYPTION_KEY: dockerEncryptionKey1234567890abcde
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  order-service:
+    build: ../awsome-shop-order-service
+    container_name: awsome-shop-order
+    ports:
+      - "8004:8004"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: awsome_shop_order
+      DB_USERNAME: root
+      DB_PASSWORD: root123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: docker-shared-jwt-secret-must-be-at-least-256-bits-long-for-hmac-sha256-signing
+      ENCRYPTION_KEY: dockerEncryptionKey1234567890abcde
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      POINTS_SERVICE_URL: http://points-service:8003
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+      points-service:
+        condition: service_started
+
+  # ==================== API Gateway ====================
+  gateway-service:
+    build: ../awsome-shop-gateway-service
+    container_name: awsome-shop-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      points-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+
+volumes:
+  mysql-data:
