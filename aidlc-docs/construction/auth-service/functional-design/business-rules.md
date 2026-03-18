@@ -46,12 +46,12 @@
 - bcrypt cost factor = 10
 
 ### BR-AUTH-003: 登录错误信息
-- 用户名不存在和密码错误统一返回 "用户名或密码错误"（AUTH_003）
+- 用户名不存在和密码错误统一返回 "用户名或密码错误"（AUTHZ_001）
 - 不向客户端暴露用户是否存在的信息，防止用户名枚举攻击
 
 ### BR-AUTH-004: 账号禁用规则
-- 被禁用的账号（status = DISABLED）无法登录，返回 AUTH_006
-- 管理员不能禁用自己的账号，返回 AUTH_007
+- 被禁用的账号（status = DISABLED）无法登录，返回 FORBIDDEN_001
+- 管理员不能禁用自己的账号，返回 BAD_REQUEST_001
 - 已登录用户被禁用后，现有 JWT 令牌在过期前仍然有效（前端清除策略的局限性，MVP 可接受）
 
 ### BR-AUTH-005: JWT 令牌规则
@@ -62,13 +62,13 @@
 
 ### BR-AUTH-006: 退出登录
 - 采用前端清除策略，后端不维护令牌黑名单
-- POST /api/auth/logout 直接返回成功
+- POST /api/v1/auth/logout 直接返回成功
 - 令牌在过期前理论上仍然有效，但前端已清除
 
 ### BR-AUTH-007: 注册积分初始化
 - 注册成功后同步调用 points-service 初始化积分余额为 0
 - 调用失败时降级处理：注册仍然成功，积分在首次查询时补偿初始化
-- 内部接口：POST http://points-service:8080/api/internal/points/init
+- 内部接口：POST http://points-service:8080/api/v1/internal/points/init
 
 ### BR-AUTH-008: 分页规则
 - page 参数：默认 0，最小 0
@@ -81,18 +81,18 @@
 
 | 错误码 | HTTP 状态码 | 描述 |
 |--------|-----------|------|
-| AUTH_001 | 409 Conflict | 用户名已存在 |
-| AUTH_002 | 409 Conflict | 工号已存在 |
-| AUTH_003 | 401 Unauthorized | 用户名或密码错误 |
-| AUTH_004 | 404 Not Found | 用户不存在 |
-| AUTH_005 | 400 Bad Request | 请求参数校验失败 |
-| AUTH_006 | 403 Forbidden | 账号已被禁用 |
-| AUTH_007 | 400 Bad Request | 不能禁用自己的账号 |
+| CONFLICT_001 | 409 Conflict | 用户名已存在 |
+| CONFLICT_002 | 409 Conflict | 工号已存在 |
+| AUTHZ_001 | 401 Unauthorized | 用户名或密码错误 |
+| NOT_FOUND_001 | 404 Not Found | 用户不存在 |
+| BAD_REQUEST_001 | 400 Bad Request | 请求参数校验失败 |
+| FORBIDDEN_001 | 403 Forbidden | 账号已被禁用 |
+| BAD_REQUEST_002 | 400 Bad Request | 不能禁用自己的账号 |
 
 ### 统一错误响应格式
 ```json
 {
-  "code": "AUTH_001",
+  "code": "CONFLICT_001",
   "message": "用户名已存在",
   "data": null
 }
@@ -104,9 +104,9 @@
 
 | 场景 | 处理方式 |
 |------|---------|
-| 并发注册相同用户名 | 数据库 UNIQUE 约束保证，后注册者收到 AUTH_001 |
-| 并发注册相同工号 | 数据库 UNIQUE 约束保证，后注册者收到 AUTH_002 |
+| 并发注册相同用户名 | 数据库 UNIQUE 约束保证，后注册者收到 CONFLICT_001 |
+| 并发注册相同工号 | 数据库 UNIQUE 约束保证，后注册者收到 CONFLICT_002 |
 | JWT_SECRET 未配置 | 服务启动失败，必须配置 |
 | points-service 不可用 | 注册成功，积分初始化降级，记录错误日志 |
-| 超长密码（>128位） | 返回 AUTH_005 参数校验失败 |
+| 超长密码（>128位） | 返回 BAD_REQUEST_001 参数校验失败 |
 | SQL 注入尝试 | 参数化查询防护，框架层面处理 |

@@ -88,9 +88,9 @@ PENDING → READY → COMPLETED
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/orders | CreateOrderRequest | OrderResponse | 创建兑换订单 |
-| GET | /api/orders?page=&size= | — | PageResponse\<OrderResponse\> | 查询当前用户兑换历史 |
-| GET | /api/orders/{id} | — | OrderResponse | 查询兑换详情 |
+| POST | /api/v1/order | CreateOrderRequest | OrderResponse | 创建兑换订单 |
+| GET | /api/v1/order?page=&size= | — | PageResponse\<OrderResponse\> | 查询当前用户兑换历史 |
+| GET | /api/v1/order/{id} | — | OrderResponse | 查询兑换详情 |
 
 说明：当前用户 ID 从请求头 `X-User-Id`（API 网关注入）获取。
 
@@ -98,8 +98,8 @@ PENDING → READY → COMPLETED
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/admin/orders?page=&size=&keyword=&startDate=&endDate= | — | PageResponse\<OrderResponse\> | 查看所有兑换记录 |
-| PUT | /api/admin/orders/{id}/status | UpdateOrderStatusRequest | OrderResponse | 更新兑换状态 |
+| GET | /api/v1/order/admin?page=&size=&keyword=&startDate=&endDate= | — | PageResponse\<OrderResponse\> | 查看所有兑换记录 |
+| PUT | /api/v1/order/admin/{id}/status | UpdateOrderStatusRequest | OrderResponse | 更新兑换状态 |
 
 管理员查询参数：
 - `page`, `size`: 分页参数

@@ -25,7 +25,6 @@
 | 产品管理 | /admin/products | 管理员 | 产品列表（表格）、新增、编辑、删除 |
 | 产品新增 | /admin/products/new | 管理员 | 新增产品表单 |
 | 产品编辑 | /admin/products/:id/edit | 管理员 | 编辑产品表单 |
-| 分类管理 | /admin/categories | 管理员 | 分类列表、新增、编辑、删除 |
 | 积分管理 | /admin/points | 管理员 | 员工积分列表、手动调整 |
 | 积分配置 | /admin/points/config | 管理员 | 积分自动发放规则配置 |
 | 兑换记录 | /admin/orders | 管理员 | 所有兑换记录、状态更新 |
@@ -65,7 +64,7 @@
 | ProductCard | FE-PRODUCT | 产品卡片（网格项） |
 | ProductGrid | FE-PRODUCT | 产品卡片网格 |
 | ProductDetail | FE-PRODUCT | 产品详情展示 |
-| CategoryFilter | FE-PRODUCT | 分类筛选器 |
+| CategoryFilter | FE-PRODUCT | 分类筛选器（从现有产品提取分类） |
 | SearchBar | FE-PRODUCT | 搜索栏 |
 | PointsBalance | FE-POINTS | 积分余额展示 |
 | PointsHistory | FE-POINTS | 积分变动历史列表 |
@@ -73,9 +72,7 @@
 | OrderList | FE-ORDER | 兑换记录列表 |
 | OrderStatusBadge | FE-ORDER | 兑换状态标签 |
 | ProductTable | FE-ADMIN | 产品管理表格 |
-| ProductForm | FE-ADMIN | 产品新增/编辑表单 |
-| CategoryTree | FE-ADMIN | 分类树形结构 |
-| CategoryForm | FE-ADMIN | 分类新增/编辑表单 |
+| ProductForm | FE-ADMIN | 产品新增/编辑表单（包含分类字符串输入） |
 | PointsTable | FE-ADMIN | 员工积分表格 |
 | PointsAdjustModal | FE-ADMIN | 积分调整弹窗 |
 | PointsConfigForm | FE-ADMIN | 积分配置表单 |
@@ -111,8 +108,8 @@ interface User {
 interface ProductState {
   products: Product[];
   currentProduct: Product | null;
-  categories: Category[];
-  selectedCategoryId: number | null;
+  availableCategories: string[]; // 从产品列表中提取的去重分类
+  selectedCategory: string | null;
   searchKeyword: string;
   loading: boolean;
   hasMore: boolean;
@@ -127,17 +124,9 @@ interface Product {
   pointsCost: number;
   stock: number;
   imageUrl: string | null;
-  categoryId: number;
-  categoryName: string;
+  category: string; // 分类为字符串字段
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  parentId: number | null;
-  children?: Category[];
 }
 ```
 
@@ -194,10 +183,7 @@ interface AdminState {
   // 产品管理
   products: AdminProduct[];
   productsPagination: Pagination;
-  
-  // 分类管理
-  categories: Category[];
-  
+
   // 积分管理
   userPoints: UserPoints[];
   userPointsPagination: Pagination;
@@ -258,57 +244,55 @@ interface AdminUser {
 
 | 方法 | 请求 | 响应 | 说明 |
 |------|------|------|------|
-| register | POST /api/auth/register | User | 用户注册 |
-| login | POST /api/auth/login | { token, user } | 用户登录 |
+| register | POST /api/v1/public/auth/register | User | 用户注册 |
+| login | POST /api/v1/public/auth/login | { token, user } | 用户登录，token包含role |
 | logout | - | - | 清除本地令牌 |
-| getCurrentUser | GET /api/auth/me | User | 获取当前用户（可选） |
+
+**注意**：前端从登录响应的token payload中获取用户角色，存储在本地状态中。
 
 ### 4.2 产品服务 (ProductService)
 
 | 方法 | 请求 | 响应 | 说明 |
 |------|------|------|------|
-| getProducts | GET /api/products | Product[] | 产品列表（分页） |
-| getProductById | GET /api/products/:id | Product | 产品详情 |
-| searchProducts | GET /api/products?keyword=xxx | Product[] | 搜索产品 |
-| getCategories | GET /api/categories | Category[] | 分类列表 |
-| getCategoryTree | GET /api/categories/tree | Category[] | 分类树 |
+| getProducts | GET /api/v1/product | Product[] | 产品列表（分页） |
+| getProductById | GET /api/v1/product/:id | Product | 产品详情 |
+| searchProducts | GET /api/v1/product?keyword=xxx | Product[] | 搜索产品 |
+| filterByCategory | GET /api/v1/product?category=xxx | Product[] | 按分类筛选产品 |
+
+**注意**：分类从产品的category字段中提取，前端本地去重获取可用分类列表。
 
 ### 4.3 积分服务 (PointsService)
 
 | 方法 | 请求 | 响应 | 说明 |
 |------|------|------|------|
-| getBalance | GET /api/points/balance | { balance } | 获取积分余额 |
-| getTransactions | GET /api/points/transactions | Transaction[] | 积分变动历史 |
+| getBalance | GET /api/v1/point/balance | { balance } | 获取积分余额 |
+| getTransactions | GET /api/v1/point/transactions | Transaction[] | 积分变动历史 |
 
 ### 4.4 兑换服务 (OrderService)
 
 | 方法 | 请求 | 响应 | 说明 |
 |------|------|------|------|
-| createOrder | POST /api/orders | Order | 创建兑换订单 |
-| getOrders | GET /api/orders | Order[] | 兑换历史 |
-| getOrderById | GET /api/orders/:id | Order | 兑换详情 |
+| createOrder | POST /api/v1/order | Order | 创建兑换订单 |
+| getOrders | GET /api/v1/order | Order[] | 兑换历史 |
+| getOrderById | GET /api/v1/order/:id | Order | 兑换详情 |
 
 ### 4.5 管理服务 (AdminService)
 
 | 方法 | 请求 | 响应 | 说明 |
 |------|------|------|------|
-| getProducts | GET /api/admin/products | Product[] | 产品列表（管理） |
-| createProduct | POST /api/admin/products | Product | 新增产品 |
-| updateProduct | PUT /api/admin/products/:id | Product | 更新产品 |
-| deleteProduct | DELETE /api/admin/products/:id | - | 删除产品 |
-| getCategories | GET /api/admin/categories | Category[] | 分类列表（管理） |
-| createCategory | POST /api/admin/categories | Category | 新增分类 |
-| updateCategory | PUT /api/admin/categories/:id | Category | 更新分类 |
-| deleteCategory | DELETE /api/admin/categories/:id | - | 删除分类 |
-| uploadFile | POST /api/files/upload | { url } | 上传图片 |
-| getUserPoints | GET /api/admin/points/balances | UserPoints[] | 员工积分列表 |
-| adjustPoints | POST /api/admin/points/adjust | - | 手动调整积分 |
-| getPointsConfig | GET /api/admin/points/config | PointsConfig | 获取积分配置 |
-| updatePointsConfig | PUT /api/admin/points/config | PointsConfig | 更新积分配置 |
-| getOrders | GET /api/admin/orders | Order[] | 所有兑换记录 |
-| updateOrderStatus | PUT /api/admin/orders/:id/status | Order | 更新兑换状态 |
-| getUsers | GET /api/admin/users | User[] | 用户列表 |
-| updateUserStatus | PUT /api/admin/users/:id/status | User | 更新用户状态 |
+| getProducts | GET /api/v1/product/admin/products | Product[] | 产品列表（管理） |
+| createProduct | POST /api/v1/product/admin/products | Product | 新增产品 |
+| updateProduct | PUT /api/v1/product/admin/products/:id | Product | 更新产品 |
+| deleteProduct | DELETE /api/v1/product/admin/products/:id | - | 删除产品 |
+| uploadFile | POST /api/v1/product/file/upload | { url } | 上传图片 |
+| getUserPoints | GET /api/v1/point/admin/balances | UserPoints[] | 员工积分列表 |
+| adjustPoints | POST /api/v1/point/admin/adjust | - | 手动调整积分 |
+| getPointsConfig | GET /api/v1/point/admin/config | PointsConfig | 获取积分配置 |
+| updatePointsConfig | PUT /api/v1/point/admin/config | PointsConfig | 更新积分配置 |
+| getOrders | GET /api/v1/order/admin/orders | Order[] | 所有兑换记录 |
+| updateOrderStatus | PUT /api/v1/order/admin/orders/:id/status | Order | 更新兑换状态 |
+| getUsers | GET /api/v1/public/auth/admin/users | User[] | 用户列表 |
+| updateUserStatus | PUT /api/v1/public/auth/admin/users/:id/status | User | 更新用户状态 |
 
 ---
 

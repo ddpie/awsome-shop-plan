@@ -58,9 +58,10 @@
 - 流水记录的 balanceAfter 必须等于变动后的实际余额
 - 余额更新和流水创建在同一事务中
 
-### BR-POINTS-004: 悲观锁并发控制
-- 所有涉及余额变动的操作必须使用 `SELECT ... FOR UPDATE` 锁定余额行
-- 适用场景：兑换扣除、管理员手动调整、积分回滚
+### BR-POINTS-004: 并发控制策略
+- 余额扣除操作（兑换扣除、管理员手动扣除）：使用 `SELECT ... FOR UPDATE` 悲观锁
+- 积分回滚：使用 `SELECT ... FOR UPDATE` 悲观锁
+- 定时任务自动发放：使用原子 UPDATE（不使用 SELECT FOR UPDATE），每条独立事务
 - 锁超时：与数据库默认配置一致（innodb_lock_wait_timeout）
 
 ### BR-POINTS-005: 回滚唯一性
@@ -98,18 +99,17 @@
 
 | 错误码 | HTTP 状态码 | 消息 | 触发场景 |
 |--------|------------|------|---------|
-| POINTS_001 | 404 | 积分余额记录不存在 | 查询/操作时 userId 无对应余额记录 |
-| POINTS_002 | 400 | 扣除后余额不足 | 管理员手动扣除时，扣除后余额 < 0 |
-| POINTS_003 | 400 | 积分不足，无法兑换 | 兑换扣除时，余额 < 扣除数量 |
-| POINTS_004 | 404 | 积分变动记录不存在 | 回滚时 transactionId 无对应记录 |
-| POINTS_005 | 400 | 只能回滚兑换扣除记录 | 回滚时原始记录 type ≠ REDEMPTION |
-| POINTS_006 | 409 | 该笔扣除已回滚，不可重复操作 | 回滚时已存在对应的 ROLLBACK 记录 |
-| POINTS_007 | 404 | 配置项不存在 | 内部错误（正常不应出现，有默认值兜底） |
+| NOT_FOUND_001 | 404 | 积分余额记录不存在 | 查询/操作时 userId 无对应余额记录 |
+| NOT_FOUND_002 | 404 | 积分变动记录不存在 | 回滚时 transactionId 无对应记录 |
+| BAD_REQUEST_001 | 400 | 扣除后余额不足 | 管理员手动扣除时，扣除后余额 < 0 |
+| BAD_REQUEST_002 | 400 | 积分不足，无法兑换 | 兑换扣除时，余额 < 扣除数量 |
+| BAD_REQUEST_003 | 400 | 只能回滚兑换扣除记录 | 回滚时原始记录 type ≠ REDEMPTION |
+| CONFLICT_001 | 409 | 该笔扣除已回滚，不可重复操作 | 回滚时已存在对应的 ROLLBACK 记录 |
 
 ### 统一错误响应格式
 ```json
 {
-  "code": "POINTS_001",
+  "code": "NOT_FOUND_001",
   "message": "积分余额记录不存在",
   "data": null
 }
@@ -141,25 +141,27 @@
 ### 并发场景
 - 同一用户同时发起兑换和管理员调整：悲观锁串行化处理
 - 多个兑换请求同时扣除同一用户积分：悲观锁串行化，第二个请求等待第一个事务提交后再校验余额
-- 定时任务发放期间有兑换请求：各自独立事务，不冲突（发放不使用悲观锁，仅原子 UPDATE）
+- 定时任务发放期间有兑换请求：各自独立事务，不冲突
+  - 定时发放使用原子 UPDATE（不使用 SELECT FOR UPDATE）
+  - 兑换扣除使用 SELECT FOR UPDATE 悲观锁
 
 ---
 
 ## 5. 跨服务交互约定
 
 ### auth-service → points-service
-- 接口：`POST http://points-service:8080/api/internal/points/init`
+- 接口：`POST http://points-service:8080/api/v1/internal/point/init`
 - 调用时机：用户注册成功后
 - 失败处理：auth-service 记录日志，注册仍然成功
 - 不做懒初始化补偿
 
 ### order-service → points-service
-- 扣除：`POST http://points-service:8080/api/internal/points/deduct`
-- 回滚：`POST http://points-service:8080/api/internal/points/rollback`
-- 查询余额：`GET http://points-service:8080/api/internal/points/balance/{userId}`
+- 扣除：`POST http://points-service:8080/api/v1/internal/point/deduct`
+- 回滚：`POST http://points-service:8080/api/v1/internal/point/rollback`
+- 查询余额：`GET http://points-service:8080/api/v1/internal/point/balance/{userId}`
 - 调用方式：HTTP 同步调用，Docker 内部网络
 
 ### 内部接口安全
-- 内部接口（/api/internal/*）不经过 API 网关
+- 内部接口（/api/v1/internal/*）不经过 API 网关
 - 仅在 Docker 内部网络中可访问
 - 不需要 JWT 认证（服务间信任）

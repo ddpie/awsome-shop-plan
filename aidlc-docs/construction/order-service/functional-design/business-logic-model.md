@@ -5,7 +5,7 @@
 ## 1. 创建兑换订单（核心流程）
 
 ```
-员工 → POST /api/orders (CreateOrderRequest)
+员工 → POST /api/v1/order (CreateOrderRequest)
   │
   ├── 1. 获取用户身份
   │     └── 从请求头 X-User-Id 获取 userId
@@ -16,32 +16,32 @@
   ├── ===== 阶段一：预校验（不加锁） =====
   │
   ├── 3. 查询产品信息
-  │     └── 调用 product-service: GET /api/internal/products/{productId}
-  │         ├── 不存在 → 返回 ORDER_001
-  │         ├── status ≠ ACTIVE → 返回 ORDER_002
-  │         └── stock ≤ 0 → 返回 ORDER_003
+  │     └── 调用 product-service: GET /api/v1/internal/product/{productId}
+  │         ├── 不存在 → 返回 NOT_FOUND_001
+  │         ├── status ≠ ACTIVE → 返回 BAD_REQUEST_001
+  │         └── stock ≤ 0 → 返回 BAD_REQUEST_002
   │
   ├── 4. 查询积分余额
-  │     └── 调用 points-service: GET /api/internal/points/balance/{userId}
-  │         ├── 不存在 → 返回 ORDER_004
-  │         └── balance < pointsPrice → 返回 ORDER_005
+  │     └── 调用 points-service: GET /api/v1/internal/point/balance/{userId}
+  │         ├── 不存在 → 返回 BAD_REQUEST_003
+  │         └── balance < pointsPrice → 返回 BAD_REQUEST_004
   │
   ├── ===== 阶段二：执行扣除（先积分后库存） =====
   │
-  ├── 5. 扣除积分
-  │     └── 调用 points-service: POST /api/internal/points/deduct
+  ├── 5. 扣除积分（Saga 步骤 1）
+  │     └── 调用 points-service: POST /api/v1/internal/point/deduct
   │         ├── 请求体: { userId, amount: pointsPrice, orderId: 预生成或后补 }
   │         ├── 成功 → 记录 transactionId，继续
-  │         └── 失败（积分不足/超时/异常）→ 返回 ORDER_005 或 ORDER_008
+  │         └── 失败（积分不足/超时/异常）→ 返回 BAD_REQUEST_004 或 INTERNAL_SERVER_ERROR_001
   │
-  ├── 6. 扣减库存
-  │     └── 调用 product-service: POST /api/internal/products/deduct-stock
+  ├── 6. 扣减库存（Saga 步骤 2）
+  │     └── 调用 product-service: POST /api/v1/internal/product/deduct-stock
   │         ├── 请求体: { productId, quantity: 1 }
   │         ├── 成功 → 继续
-  │         └── 失败（库存不足/超时/异常）→ 补偿回滚积分，返回错误
-  │               └── 补偿: 调用 points-service: POST /api/internal/points/rollback
+  │         └── 失败（库存不足/超时/异常）→ Saga 补偿：回滚积分，返回错误
+  │               └── 补偿: 调用 points-service: POST /api/v1/internal/point/rollback
   │                   ├── 请求体: { transactionId }
-  │                   └── 回滚失败 → 记录错误日志（需人工介入）
+  │                   └── 回滚失败 → 记录错误日志 + 人工介入（MVP 最大努力补偿模式）
   │
   ├── ===== 阶段三：创建订单记录 =====
   │
@@ -57,17 +57,19 @@
   └── 8. 返回 OrderResponse
 ```
 
-### 跨服务事务策略说明
+### 分布式事务策略说明
 
-**策略：先校验再执行 + 顺序扣除 + 补偿回滚**
+**策略：Saga 最大努力补偿模式**
 
 1. **预校验阶段**（步骤 3-4）：先分别查询积分和库存是否充足，不加锁。这一步可以快速拦截明显不满足条件的请求，减少不必要的锁竞争。
 
-2. **执行阶段**（步骤 5-6）：先扣积分，再扣库存。
+2. **执行阶段（Saga 编排）**（步骤 5-6）：顺序执行积分扣除 → 库存扣减
    - 先扣积分的原因：积分是虚拟资产，回滚更安全可靠
-   - 如果库存扣减失败，回滚积分
+   - 如果库存扣减失败，逆序补偿回滚积分
 
-3. **并发场景**：预校验通过但执行时条件已变（如另一用户刚好扣完库存），由 points-service/product-service 的悲观锁保证数据一致性，order-service 根据返回的错误码进行补偿。
+3. **补偿失败处理**：补偿操作失败时，记录错误日志并进行人工介入（MVP 阶段采用最大努力补偿，不保证强一致性）
+
+4. **并发场景**：预校验通过但执行时条件已变（如另一用户刚好扣完库存），由 points-service/product-service 的悲观锁保证数据一致性，order-service 根据返回的错误码进行 Saga 补偿。
 
 ### orderId 处理
 - 方案：先创建 PENDING 状态的订单记录获取 orderId，再执行扣除流程
@@ -77,7 +79,7 @@
 ### 优化方案（推荐）
 
 ```
-员工 → POST /api/orders
+员工 → POST /api/v1/order
   │
   ├── 1-2. 获取用户身份 + 参数校验
   │
@@ -86,11 +88,12 @@
   ├── 5. 创建订单记录（status=PENDING）
   │     └── 获得 orderId
   │
-  ├── 6. 扣除积分（传入 orderId）
+  ├── 6. 扣除积分（传入 orderId）— Saga 步骤 1
   │     └── 失败 → 删除订单记录，返回错误
   │
-  ├── 7. 扣减库存
-  │     └── 失败 → 回滚积分 + 删除订单记录，返回错误
+  ├── 7. 扣减库存 — Saga 步骤 2
+  │     └── 失败 → Saga 补偿：回滚积分 + 删除订单记录，返回错误
+  │               补偿失败 → 记录日志 + 人工介入
   │
   └── 8. 返回 OrderResponse
 ```
@@ -100,7 +103,7 @@
 ## 2. 查询当前用户兑换历史
 
 ```
-员工 → GET /api/orders?page=0&size=20
+员工 → GET /api/v1/order?page=0&size=20
   │
   ├── 1. 获取用户身份
   │     └── 从请求头 X-User-Id 获取 userId
@@ -120,15 +123,15 @@
 ## 3. 查询兑换详情
 
 ```
-员工 → GET /api/orders/{id}
+员工 → GET /api/v1/order/{id}
   │
   ├── 1. 获取用户身份
   │     └── 从请求头 X-User-Id 获取 userId
   │
   ├── 2. 查询订单
   │     └── 按 id 查询 orders
-  │         ├── 不存在 → 返回 ORDER_006
-  │         └── userId 不匹配 → 返回 ORDER_007（不允许查看他人订单）
+  │         ├── 不存在 → 返回 NOT_FOUND_001
+  │         └── userId 不匹配 → 返回 FORBIDDEN_001（不允许查看他人订单）
   │
   └── 3. 返回 OrderResponse
 ```
@@ -138,7 +141,7 @@
 ## 4. 管理员 — 查看所有兑换记录
 
 ```
-管理员 → GET /api/admin/orders?page=0&size=20&keyword=xxx&startDate=&endDate=
+管理员 → GET /api/v1/order/admin?page=0&size=20&keyword=xxx&startDate=&endDate=
   │
   ├── 1. 分页参数处理
   │     ├── page: 默认 0，最小 0
@@ -160,13 +163,13 @@
 ## 5. 管理员 — 更新兑换状态
 
 ```
-管理员 → PUT /api/admin/orders/{id}/status (UpdateOrderStatusRequest)
+管理员 → PUT /api/v1/order/admin/{id}/status (UpdateOrderStatusRequest)
   │
   ├── 1. 参数校验
   │     └── status: 必须为合法的 OrderStatus 值
   │
   ├── 2. 查询订单
-  │     └── 按 id 查询 → 不存在则返回 ORDER_006
+  │     └── 按 id 查询 → 不存在则返回 NOT_FOUND_001
   │
   ├── 3. 状态流转校验
   │     └── 校验当前状态 → 目标状态是否合法
@@ -174,18 +177,18 @@
   │         ├── PENDING → CANCELLED ✅
   │         ├── READY → COMPLETED ✅
   │         ├── READY → CANCELLED ✅
-  │         └── 其他 → 返回 ORDER_009（非法状态变更）
+  │         └── 其他 → 返回 BAD_REQUEST_005（非法状态变更）
   │
-  ├── 4. 取消处理（如果目标状态为 CANCELLED）
+  ├── 4. 取消处理（如果目标状态为 CANCELLED）— Saga 补偿
   │     ├── a. 回滚积分
   │     │     └── 查询 point_transactions 中 referenceId=orderId 且 type=REDEMPTION 的记录
-  │     │         └── 调用 points-service: POST /api/internal/points/rollback
-  │     │             └── 失败 → 记录错误日志，状态仍更新为 CANCELLED（需人工介入处理积分）
+  │     │         └── 调用 points-service: POST /api/v1/internal/point/rollback
+  │     │             └── 失败 → 记录错误日志 + 人工介入（最大努力补偿）
   │     │
   │     └── b. 恢复库存
-  │           └── 调用 product-service: POST /api/internal/products/restore-stock
+  │           └── 调用 product-service: POST /api/v1/internal/product/restore-stock
   │               ├── 请求体: { productId: 订单中的 productId, quantity: 1 }
-  │               └── 失败 → 记录错误日志（需人工介入处理库存）
+  │               └── 失败 → 记录错误日志 + 人工介入（最大努力补偿）
   │
   ├── 5. 更新状态
   │     └── UPDATE orders SET status = 目标状态
@@ -193,11 +196,11 @@
   └── 6. 返回更新后的 OrderResponse
 ```
 
-### 取消补偿说明
-- 取消兑换时自动回滚积分和恢复库存
-- 回滚/恢复调用失败不阻塞状态更新（订单仍标记为 CANCELLED）
-- 失败情况记录错误日志，由管理员人工介入处理
-- 这是"最大努力"补偿策略，适合 MVP 阶段
+### 取消补偿说明（Saga 最大努力补偿模式）
+- 取消兑换时采用 Saga 补偿：自动回滚积分和恢复库存
+- 补偿操作失败时：记录错误日志 + 人工介入（不阻塞状态更新）
+- 订单状态仍更新为 CANCELLED，但积分/库存可能需要人工处理
+- MVP 阶段采用最大努力补偿策略，不保证强一致性
 
 ### 积分回滚的 transactionId 获取
 - order-service 需要知道积分扣除时的 transactionId 才能调用回滚接口
@@ -224,9 +227,9 @@
 
 | 调用方 | 被调用方 | 接口 | 超时 | 失败处理 |
 |--------|---------|------|------|---------|
-| order-service | product-service | GET /api/internal/products/{id} | 3s | 返回错误 |
-| order-service | points-service | GET /api/internal/points/balance/{userId} | 3s | 返回错误 |
-| order-service | points-service | POST /api/internal/points/deduct | 3s | 返回错误，删除订单 |
-| order-service | product-service | POST /api/internal/products/deduct-stock | 3s | 回滚积分，删除订单 |
-| order-service | points-service | POST /api/internal/points/rollback | 3s | 记录日志（人工介入） |
-| order-service | product-service | POST /api/internal/products/restore-stock | 3s | 记录日志（人工介入） |
+| order-service | product-service | GET /api/v1/internal/product/{id} | 3s | 返回错误 |
+| order-service | points-service | GET /api/v1/internal/point/balance/{userId} | 3s | 返回错误 |
+| order-service | points-service | POST /api/v1/internal/point/deduct | 3s | 返回错误，删除订单 |
+| order-service | product-service | POST /api/v1/internal/product/deduct-stock | 3s | Saga 补偿：回滚积分，删除订单 |
+| order-service | points-service | POST /api/v1/internal/point/rollback | 3s | 记录日志 + 人工介入 |
+| order-service | product-service | POST /api/v1/internal/product/restore-stock | 3s | 记录日志 + 人工介入 |

@@ -152,8 +152,8 @@
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/points/balance | — | PointBalanceResponse | 查询当前用户积分余额 |
-| GET | /api/points/transactions?page=&size= | — | PageResponse\<PointTransactionResponse\> | 查询当前用户积分变动历史 |
+| GET | /api/v1/point/balance | — | PointBalanceResponse | 查询当前用户积分余额 |
+| GET | /api/v1/point/transactions?page=&size= | — | PageResponse\<PointTransactionResponse\> | 查询当前用户积分变动历史 |
 
 说明：当前用户 ID 从请求头 `X-User-Id`（API 网关注入）获取。
 
@@ -161,17 +161,17 @@
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/admin/points/balances?page=&size=&keyword= | — | PageResponse\<UserPointResponse\> | 查看所有员工积分余额 |
-| GET | /api/admin/points/transactions/{userId}?page=&size=&type= | — | PageResponse\<PointTransactionResponse\> | 查看指定员工积分变动明细 |
-| POST | /api/admin/points/adjust | AdjustPointsRequest | PointTransactionResponse | 手动调整员工积分 |
-| GET | /api/admin/points/config | — | DistributionConfigResponse | 获取发放配置 |
-| PUT | /api/admin/points/config | UpdateDistributionConfigRequest | DistributionConfigResponse | 更新发放配置 |
+| GET | /api/v1/point/admin/balances?page=&size=&keyword= | — | PageResponse\<UserPointResponse\> | 查看所有员工积分余额 |
+| GET | /api/v1/point/admin/transactions/{userId}?page=&size=&type= | — | PageResponse\<PointTransactionResponse\> | 查看指定员工积分变动明细 |
+| POST | /api/v1/point/admin/adjust | AdjustPointsRequest | PointTransactionResponse | 手动调整员工积分 |
+| GET | /api/v1/point/admin/config | — | DistributionConfigResponse | 获取发放配置 |
+| PUT | /api/v1/point/admin/config | UpdateDistributionConfigRequest | DistributionConfigResponse | 更新发放配置 |
 
 ### 内部端点（服务间调用，不经过 API 网关）
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/internal/points/init | InitPointsRequest | PointBalanceResponse | 初始化用户积分余额（auth-service 调用） |
-| POST | /api/internal/points/deduct | DeductPointsRequest | PointTransactionResponse | 兑换扣除积分（order-service 调用） |
-| POST | /api/internal/points/rollback | RollbackDeductionRequest | void | 回滚积分扣除（order-service 调用） |
-| GET | /api/internal/points/balance/{userId} | — | PointBalanceResponse | 查询指定用户积分余额（order-service 调用） |
+| POST | /api/v1/internal/point/init | InitPointsRequest | PointBalanceResponse | 初始化用户积分余额（auth-service 调用） |
+| POST | /api/v1/internal/point/deduct | DeductPointsRequest | PointTransactionResponse | 兑换扣除积分（order-service 调用） |
+| POST | /api/v1/internal/point/rollback | RollbackDeductionRequest | void | 回滚积分扣除（order-service 调用） |
+| GET | /api/v1/internal/point/balance/{userId} | — | PointBalanceResponse | 查询指定用户积分余额（order-service 调用） |

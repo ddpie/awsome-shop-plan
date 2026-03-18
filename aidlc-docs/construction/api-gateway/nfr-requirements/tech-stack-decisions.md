@@ -3,27 +3,33 @@
 ---
 
 ## 1. 后端框架
-- **决策**: 延后到实现阶段，由用户提供统一的后端技术框架
-- **影响**: 具体的 HTTP 代理实现、JWT 库、过滤器/中间件机制将在实现阶段确定
+- **决策**: Spring Cloud Gateway（基于 WebFlux 响应式框架）
+- **特性**:
+  - 响应式非阻塞 I/O
+  - 基于 Netty 的高性能网关
+  - 支持路由、过滤器、断言等功能
+  - 与 Spring Boot 生态无缝集成
 
 ---
 
-## 2. JWT 校验
+## 2. 令牌校验
 
-### 算法与密钥
-- 签名算法：HS256（HMAC-SHA256）
-- 密钥来源：JWT_SECRET 环境变量
-- 与 auth-service 共享同一密钥
+### 校验方式
+- **决策**: 远程校验 — 调用 auth-service 的令牌验证接口
+- **端点**: `/api/v1/internal/auth/validate`
+- **实现**: 使用 WebClient 发起异步 HTTP 调用
+- **注意**: api-gateway 不持有 JWT 密钥，通过调用 auth-service 验证令牌
 
-### 校验内容
-- 签名有效性
-- 过期时间（exp 字段）
-- payload 必要字段完整性（userId、username、role）
+### 校验流程
+1. 从请求头 `Authorization: Bearer <token>` 提取令牌
+2. 通过 WebClient 调用 auth-service 的 `/api/v1/internal/auth/validate` 接口
+3. auth-service 返回验证结果和用户信息（operatorId、role）
+4. 验证成功后，网关注入 `X-Operator-Id` 和 `X-User-Role` 请求头转发给下游服务
 
 ### 性能特征
-- JWT 校验为纯 CPU 计算操作，无 I/O
-- HS256 单次校验耗时通常 < 1ms
-- 不需要缓存或外部调用
+- 远程调用超时配置：5 秒
+- 每次请求都需要调用 auth-service
+- 响应时间取决于 auth-service 性能和网络延迟
 
 ---
 
@@ -43,8 +49,10 @@
 ### 转发策略
 - 保留完整请求路径（不去除前缀）
 - 保留查询参数和请求体
-- 注入 X-User-Id 和 X-User-Role 请求头
+- 注入 `X-Operator-Id` 请求头（从令牌验证结果中获取）
+- 注入 `X-User-Role` 请求头（从令牌验证结果中获取）
 - 清除客户端可能伪造的安全请求头
+- **注意**: 网关会检查管理员端点的角色权限（ADMIN_ONLY），但具体业务权限由各业务服务自行验证
 
 ---
 
@@ -52,8 +60,10 @@
 
 ### 路由匹配策略
 - 精确前缀匹配，按优先级从高到低
-- /api/admin/* 优先于 /api/* 通用路由
-- 路由规则集中定义，便于维护
+- `/api/v1/{service}/**` 路由到对应服务
+- 路由规则使用 `metadata: auth-required: true/false` 控制是否需要认证
+- 公开路径：`/api/v1/public/**`（如登录、注册等）
+- 受保护路径：`/api/v1/{service}/**`（需要令牌验证）
 
 ### 目标服务地址
 
@@ -64,15 +74,20 @@
 | POINTS_SERVICE_URL | http://points-service:8003 | 积分服务 |
 | ORDER_SERVICE_URL | http://order-service:8004 | 兑换服务 |
 
+### 认证配置
+- 令牌验证端点：通过 `gateway.auth.validate-url` 配置
+- WebClient 超时：5 秒
+
 ---
 
 ## 5. 性能目标
 
 | 指标 | 目标值 | 说明 |
 |------|--------|------|
-| 网关自身处理开销 P95 | ≤ 50ms | JWT 校验 + 路由匹配 + 请求头处理 |
+| 网关自身处理开销 P95 | ≤ 100ms | 令牌远程验证 + 路由匹配 + 请求头处理 |
+| 令牌验证超时 | 5s | 调用 auth-service 的超时时间 |
 | 转发超时 | 3s | 连接 1s + 读取 2s |
-| 端到端响应时间 | 取决于下游 | 网关开销 + 下游响应时间 |
+| 端到端响应时间 | 取决于下游 | 网关开销 + 令牌验证 + 下游响应时间 |
 
 ---
 
@@ -80,11 +95,13 @@
 
 | 依赖 | 类型 | 说明 |
 |------|------|------|
-| auth-service (8001) | 运行时依赖 | 路由转发目标 |
+| auth-service (8001) | 运行时依赖（关键） | 令牌验证 + 路由转发目标 |
 | product-service (8002) | 运行时依赖 | 路由转发目标 |
 | points-service (8003) | 运行时依赖 | 路由转发目标 |
 | order-service (8004) | 运行时依赖 | 路由转发目标 |
-| JWT_SECRET | 配置依赖 | 与 auth-service 共享 |
 | Docker 网络 | 基础设施 | 内部服务通信 |
 
-说明：api-gateway 不依赖数据库，是纯粹的无状态代理服务。
+说明：
+- api-gateway 不依赖数据库，是纯粹的无状态代理服务
+- **api-gateway 不持有 JWT 密钥**，通过调用 auth-service 验证令牌
+- auth-service 是网关的关键依赖，若 auth-service 不可用，所有需认证的请求都会失败

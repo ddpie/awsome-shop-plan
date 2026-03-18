@@ -2,6 +2,25 @@
 
 ---
 
+## 关键设计决策
+
+1. **API路径规范**：所有API路径使用 `/api/v1/...` 前缀
+   - 公开接口：`/api/v1/public/auth/...`
+   - 产品服务：`/api/v1/product/...`
+   - 积分服务：`/api/v1/point/...`
+   - 订单服务：`/api/v1/order/...`
+   - 管理员接口：`/api/v1/{service}/admin/...`
+
+2. **分类简化**：分类不再是独立实体，而是产品的字符串字段
+   - 前端从产品列表中提取可用分类进行筛选
+   - 管理员在产品表单中直接输入分类名称
+
+3. **错误码格式**：遵循 `NOT_FOUND_001`, `BAD_REQUEST_001` 等格式
+
+4. **用户角色获取**：前端从登录响应的token payload中获取用户角色，存储在本地状态
+
+---
+
 ## 1. 认证流程
 
 ### 1.1 用户注册流程
@@ -18,7 +37,7 @@
   │     └── 密码：最少6位
   │
   ├── 提交注册请求
-  │     └── POST /api/auth/register
+  │     └── POST /api/v1/public/auth/register
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 跳转登录页
@@ -37,7 +56,7 @@
   │     └── 密码（必填）
   │
   ├── 提交登录请求
-  │     └── POST /api/auth/login
+  │     └── POST /api/v1/public/auth/login
   │
   ├── 处理响应
   │     ├── 成功
@@ -95,11 +114,8 @@
   │     ├── products = []
   │     └── hasMore = true
   │
-  ├── 加载分类列表
-  │     └── GET /api/categories/tree
-  │
   ├── 加载首批产品
-  │     └── GET /api/products?page=0&size=20
+  │     └── GET /api/v1/product?page=0&size=20
   │
   ├── 渲染产品卡片网格
   │
@@ -107,7 +123,7 @@
   │     ├── 检查 hasMore
   │     │     ├── true → 加载下一页
   │     │     │         ├── page++
-  │     │     │         ├── GET /api/products?page={page}&size=20
+  │     │     │         ├── GET /api/v1/product?page={page}&size=20
   │     │     │         ├── 追加到 products
   │     │     │         └── 更新 hasMore
   │     │     └── false → 显示"没有更多了"
@@ -120,7 +136,7 @@
 ```
 用户点击分类
   │
-  ├── 更新 selectedCategoryId
+  ├── 更新 selectedCategory（字符串）
   │
   ├── 重置分页状态
   │     ├── page = 0
@@ -128,7 +144,7 @@
   │     └── hasMore = true
   │
   ├── 加载该分类下的产品
-  │     └── GET /api/products?categoryId={id}&page=0&size=20
+  │     └── GET /api/v1/product?category={category}&page=0&size=20
   │
   ├── 渲染产品卡片网格
   │
@@ -150,7 +166,7 @@
   │     └── hasMore = true
   │
   ├── 搜索产品
-  │     └── GET /api/products?keyword={keyword}&page=0&size=20
+  │     └── GET /api/v1/product?keyword={keyword}&page=0&size=20
   │
   ├── 渲染搜索结果
   │
@@ -165,7 +181,7 @@
   ├── 跳转 /products/:id
   │
   ├── 加载产品详情
-  │     └── GET /api/products/:id
+  │     └── GET /api/v1/product/:id
   │
   ├── 渲染产品详情
   │     ├── 产品图片（懒加载）
@@ -190,8 +206,8 @@
   ├── 跳转兑换确认页 /orders/confirm/:productId
   │
   ├── 加载确认页数据
-  │     ├── GET /api/products/:productId（产品信息）
-  │     └── GET /api/points/balance（当前积分）
+  │     ├── GET /api/v1/product/:productId（产品信息）
+  │     └── GET /api/v1/point/balance（当前积分）
   │
   ├── 渲染确认页
   │     ├── 产品信息（图片、名称、描述）
@@ -208,7 +224,7 @@
   │     │           └── 是 → 继续
   │     │
   │     ├── 提交兑换请求
-  │     │     └── POST /api/orders { productId }
+  │     │     └── POST /api/v1/order { productId }
   │     │
   │     ├── 处理响应
   │     │     ├── 成功
@@ -234,7 +250,7 @@
   │     └── hasMore = true
   │
   ├── 加载兑换记录
-  │     └── GET /api/orders?page=0&size=20
+  │     └── GET /api/v1/order?page=0&size=20
   │
   ├── 渲染兑换记录列表
   │     ├── 产品图片
@@ -259,10 +275,10 @@
 用户访问 /points
   │
   ├── 加载积分余额
-  │     └── GET /api/points/balance
+  │     └── GET /api/v1/point/balance
   │
   ├── 加载积分变动历史
-  │     └── GET /api/points/transactions?page=0&size=20
+  │     └── GET /api/v1/point/transactions?page=0&size=20
   │
   ├── 渲染积分中心
   │     ├── 积分余额卡片
@@ -290,7 +306,7 @@
 管理员访问 /admin/products
   │
   ├── 加载产品列表（传统分页）
-  │     └── GET /api/admin/products?page=0&size=10
+  │     └── GET /api/v1/product/admin/products?page=0&size=10
   │
   ├── 渲染产品表格
   │     ├── 产品图片
@@ -311,22 +327,19 @@
 ```
 管理员访问 /admin/products/new
   │
-  ├── 加载分类列表
-  │     └── GET /api/admin/categories
-  │
   ├── 填写产品表单
   │     ├── 产品名称（必填）
   │     ├── 产品描述
   │     ├── 所需积分（必填，正整数）
   │     ├── 库存数量（必填，非负整数）
-  │     ├── 产品分类（必填）
+  │     ├── 产品分类（必填，字符串输入）
   │     └── 产品图片（可选，上传）
   │
   ├── 图片上传（如有）
-  │     └── POST /api/files/upload
+  │     └── POST /api/v1/product/file/upload
   │
   ├── 提交产品
-  │     └── POST /api/admin/products
+  │     └── POST /api/v1/product/admin/products
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 跳转产品列表
@@ -340,15 +353,12 @@
 管理员访问 /admin/products/:id/edit
   │
   ├── 加载产品详情
-  │     └── GET /api/admin/products/:id
-  │
-  ├── 加载分类列表
-  │     └── GET /api/admin/categories
+  │     └── GET /api/v1/product/admin/products/:id
   │
   ├── 填充表单
   │
   ├── 修改并提交
-  │     └── PUT /api/admin/products/:id
+  │     └── PUT /api/v1/product/admin/products/:id
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 跳转产品列表
@@ -364,7 +374,7 @@
   ├── 显示确认弹窗
   │
   ├── 确认删除
-  │     └── DELETE /api/admin/products/:id
+  │     └── DELETE /api/v1/product/admin/products/:id
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 刷新列表
@@ -373,41 +383,9 @@
   └── 结束
 ```
 
-### 5.2 分类管理流程
+### 5.2 分类管理说明
 
-#### 分类列表
-```
-管理员访问 /admin/categories
-  │
-  ├── 加载分类树
-  │     └── GET /api/admin/categories/tree
-  │
-  ├── 渲染分类树形结构
-  │     ├── 一级分类
-  │     │     └── 二级分类
-  │     └── 操作（编辑/删除/新增子分类）
-  │
-  └── 结束
-```
-
-#### 新增/编辑分类
-```
-管理员点击"新增"或"编辑"
-  │
-  ├── 显示分类表单（弹窗或页面）
-  │     ├── 分类名称（必填）
-  │     └── 父分类（可选，限制2级）
-  │
-  ├── 提交
-  │     ├── 新增 → POST /api/admin/categories
-  │     └── 编辑 → PUT /api/admin/categories/:id
-  │
-  ├── 处理响应
-  │     ├── 成功 → 显示成功提示 → 刷新分类树
-  │     └── 失败 → 显示错误提示
-  │
-  └── 结束
-```
+**注意**：由于系统已简化设计，分类现在作为产品的字符串字段，不再有独立的分类管理页面。管理员在产品表单中直接输入分类名称即可。分类会在产品列表中自动提取显示，供用户筛选使用。
 
 ### 5.3 积分管理流程
 
@@ -416,7 +394,7 @@
 管理员访问 /admin/points
   │
   ├── 加载员工积分列表（传统分页）
-  │     └── GET /api/admin/points/balances?page=0&size=10
+  │     └── GET /api/v1/point/admin/balances?page=0&size=10
   │
   ├── 渲染积分表格
   │     ├── 用户名
@@ -436,7 +414,7 @@
   │     └── 调整原因（必填）
   │
   ├── 提交调整
-  │     └── POST /api/admin/points/adjust
+  │     └── POST /api/v1/point/admin/adjust
   │           { userId, amount, reason }
   │
   ├── 处理响应
@@ -451,13 +429,13 @@
 管理员访问 /admin/points/config
   │
   ├── 加载当前配置
-  │     └── GET /api/admin/points/config
+  │     └── GET /api/v1/point/admin/config
   │
   ├── 渲染配置表单
   │     └── 每月发放积分数量
   │
   ├── 修改并保存
-  │     └── PUT /api/admin/points/config
+  │     └── PUT /api/v1/point/admin/config
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示
@@ -472,7 +450,7 @@
 管理员访问 /admin/orders
   │
   ├── 加载兑换记录（传统分页）
-  │     └── GET /api/admin/orders?page=0&size=10
+  │     └── GET /api/v1/order/admin/orders?page=0&size=10
   │
   ├── 渲染兑换记录表格
   │     ├── 订单ID
@@ -489,7 +467,7 @@
   │     │     ├── READY → COMPLETED
   │     │     └── 任意 → CANCELLED
   │     │
-  │     └── PUT /api/admin/orders/:id/status { status }
+  │     └── PUT /api/v1/order/admin/orders/:id/status { status }
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 刷新列表
@@ -504,7 +482,7 @@
 管理员访问 /admin/users
   │
   ├── 加载用户列表（传统分页）
-  │     └── GET /api/admin/users?page=0&size=10
+  │     └── GET /api/v1/public/auth/admin/users?page=0&size=10
   │
   ├── 渲染用户表格
   │     ├── 用户ID
@@ -515,7 +493,7 @@
   │     └── 操作（禁用/启用）
   │
   ├── 禁用/启用用户
-  │     └── PUT /api/admin/users/:id/status { status }
+  │     └── PUT /api/v1/public/auth/admin/users/:id/status { status }
   │
   ├── 处理响应
   │     ├── 成功 → 显示成功提示 → 刷新列表
@@ -556,7 +534,7 @@
   │     └── 文件大小（≤ 5MB）
   │
   ├── 上传图片
-  │     └── POST /api/files/upload (multipart/form-data)
+  │     └── POST /api/v1/product/file/upload (multipart/form-data)
   │
   ├── 处理响应
   │     ├── 成功 → 获取图片 URL → 显示预览

@@ -10,39 +10,41 @@
 |------|------|------|
 | id | Long | 产品唯一标识（自增主键） |
 | name | String | 产品名称 |
+| subtitle | String | 产品副标题（可选） |
+| sku | String | 产品SKU编码 |
+| category | String | 产品分类（字符串） |
+| brand | String | 品牌（可选） |
+| pointsPrice | BigDecimal | 所需积分 |
+| marketPrice | BigDecimal | 市场价格（可选） |
+| stock | Integer | 库存数量 |
+| soldCount | Integer | 已售数量 |
+| mainImage | String | 主图片 URL（可选） |
+| images | String | 图片列表（JSON 字符串） |
 | description | String | 产品描述（可选） |
-| pointsPrice | Int | 所需积分 |
-| stock | Int | 库存数量 |
-| imageUrl | String | 产品图片 URL（可选） |
-| categoryId | Long | 所属分类 ID |
-| status | ProductStatus | 产品状态枚举 |
+| deliveryMethod | String | 配送方式（可选） |
+| serviceGuarantee | String | 服务保障（可选） |
+| promotion | String | 促销信息（可选） |
+| colors | String | 颜色选项（可选） |
+| specs | String | 规格参数（JSON 字符串） |
+| status | Integer | 产品状态（0=上架，1=下架） |
+| deleted | Integer | 删除标记（0=未删除，1=已删除） |
+| version | Integer | 乐观锁版本号 |
+| createdBy | String | 创建人 |
+| updatedBy | String | 更新人 |
 | createdAt | DateTime | 创建时间 |
 | updatedAt | DateTime | 更新时间 |
 
-### Category（分类）
-
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| id | Long | 分类唯一标识（自增主键） |
-| name | String | 分类名称 |
-| parentId | Long | 父分类 ID（NULL 为顶级分类） |
-| sortOrder | Int | 排序序号 |
-| createdAt | DateTime | 创建时间 |
-| updatedAt | DateTime | 更新时间 |
-
-### 枚举定义
+### 状态定义
 
 ```
-ProductStatus:
-  - ACTIVE      # 上架中
-  - INACTIVE    # 已下架（软删除）
-```
+status:
+  - 0: 上架中
+  - 1: 已下架
 
-### 分类层级规则
-- 最大层级深度：2 级（一级分类 + 二级分类）
-- parentId = NULL → 一级分类
-- parentId = 一级分类ID → 二级分类
-- 不允许创建三级及更深层级的分类
+deleted:
+  - 0: 未删除
+  - 1: 已删除
+```
 
 ---
 
@@ -53,38 +55,42 @@ ProductStatus:
 | 字段 | 类型 | 必填 | 校验规则 |
 |------|------|------|---------|
 | name | String | 是 | 1-200位，非空 |
+| subtitle | String | 否 | 最大 200 字符 |
+| sku | String | 是 | 1-100位，非空 |
+| category | String | 是 | 1-100位，非空 |
+| brand | String | 否 | 最大 100 字符 |
+| pointsPrice | BigDecimal | 是 | 正数，≥ 0.01 |
+| marketPrice | BigDecimal | 否 | 正数，≥ 0.01 |
+| stock | Integer | 是 | 非负整数，≥ 0 |
+| mainImage | String | 否 | 最大 500 字符（由文件上传接口返回） |
+| images | String | 否 | JSON 字符串，最大 2000 字符 |
 | description | String | 否 | 最大 5000 字符 |
-| pointsPrice | Int | 是 | 正整数，≥ 1 |
-| stock | Int | 是 | 非负整数，≥ 0 |
-| imageUrl | String | 否 | 最大 500 字符（由文件上传接口返回） |
-| categoryId | Long | 是 | 必须为已存在的分类 ID |
+| deliveryMethod | String | 否 | 最大 200 字符 |
+| serviceGuarantee | String | 否 | 最大 500 字符 |
+| promotion | String | 否 | 最大 500 字符 |
+| colors | String | 否 | 最大 200 字符 |
+| specs | String | 否 | JSON 字符串，最大 2000 字符 |
 
 ### UpdateProductRequest — 更新产品请求
 
 | 字段 | 类型 | 必填 | 校验规则 |
 |------|------|------|---------|
 | name | String | 否 | 1-200位 |
+| subtitle | String | 否 | 最大 200 字符 |
+| sku | String | 否 | 1-100位 |
+| category | String | 否 | 1-100位 |
+| brand | String | 否 | 最大 100 字符 |
+| pointsPrice | BigDecimal | 否 | 正数，≥ 0.01 |
+| marketPrice | BigDecimal | 否 | 正数，≥ 0.01 |
+| stock | Integer | 否 | 非负整数，≥ 0 |
+| mainImage | String | 否 | 最大 500 字符 |
+| images | String | 否 | JSON 字符串，最大 2000 字符 |
 | description | String | 否 | 最大 5000 字符 |
-| pointsPrice | Int | 否 | 正整数，≥ 1 |
-| stock | Int | 否 | 非负整数，≥ 0 |
-| imageUrl | String | 否 | 最大 500 字符 |
-| categoryId | Long | 否 | 必须为已存在的分类 ID |
-
-### CreateCategoryRequest — 创建分类请求
-
-| 字段 | 类型 | 必填 | 校验规则 |
-|------|------|------|---------|
-| name | String | 是 | 1-100位，非空 |
-| parentId | Long | 否 | NULL 为顶级分类，非 NULL 必须为已存在的一级分类 ID |
-| sortOrder | Int | 否 | 默认 0 |
-
-### UpdateCategoryRequest — 更新分类请求
-
-| 字段 | 类型 | 必填 | 校验规则 |
-|------|------|------|---------|
-| name | String | 否 | 1-100位 |
-| parentId | Long | 否 | NULL 或已存在的一级分类 ID |
-| sortOrder | Int | 否 | 非负整数 |
+| deliveryMethod | String | 否 | 最大 200 字符 |
+| serviceGuarantee | String | 否 | 最大 500 字符 |
+| promotion | String | 否 | 最大 500 字符 |
+| colors | String | 否 | 最大 200 字符 |
+| specs | String | 否 | JSON 字符串，最大 2000 字符 |
 
 ### StockDeductRequest — 库存扣减请求（内部接口）
 
@@ -103,32 +109,25 @@ ProductStatus:
 |------|------|------|
 | id | Long | 产品 ID |
 | name | String | 产品名称 |
+| subtitle | String | 产品副标题 |
+| sku | String | 产品SKU编码 |
+| category | String | 产品分类 |
+| brand | String | 品牌 |
+| pointsPrice | BigDecimal | 所需积分 |
+| marketPrice | BigDecimal | 市场价格 |
+| stock | Integer | 库存数量 |
+| soldCount | Integer | 已售数量 |
+| mainImage | String | 主图片 URL |
+| images | String | 图片列表（JSON 字符串） |
 | description | String | 产品描述 |
-| pointsPrice | Int | 所需积分 |
-| stock | Int | 库存数量 |
-| imageUrl | String | 产品图片 URL |
-| categoryId | Long | 分类 ID |
-| categoryName | String | 分类名称（冗余，方便前端展示） |
-| status | String | 产品状态 |
+| deliveryMethod | String | 配送方式 |
+| serviceGuarantee | String | 服务保障 |
+| promotion | String | 促销信息 |
+| colors | String | 颜色选项 |
+| specs | String | 规格参数（JSON 字符串） |
+| status | Integer | 产品状态（0=上架，1=下架） |
 | createdAt | String | 创建时间（ISO 8601） |
-
-### CategoryResponse — 分类信息响应
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | Long | 分类 ID |
-| name | String | 分类名称 |
-| parentId | Long | 父分类 ID |
-| sortOrder | Int | 排序序号 |
-
-### CategoryTreeNode — 分类树节点
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | Long | 分类 ID |
-| name | String | 分类名称 |
-| sortOrder | Int | 排序序号 |
-| children | List\<CategoryTreeNode\> | 子分类列表 |
+| updatedAt | String | 更新时间（ISO 8601） |
 
 ### FileResponse — 文件上传响应
 
@@ -154,43 +153,39 @@ ProductStatus:
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/products | — | PageResponse\<ProductResponse\> | 产品列表（分页、搜索、分类筛选） |
-| GET | /api/products/{id} | — | ProductResponse | 产品详情 |
-| GET | /api/categories/tree | — | List\<CategoryTreeNode\> | 分类树 |
+| GET | /api/v1/products | — | PageResponse\<ProductResponse\> | 产品列表（分页、搜索、分类筛选） |
+| GET | /api/v1/products/{id} | — | ProductResponse | 产品详情 |
 
 查询参数（产品列表）：
 - `page`: 页码（默认 0）
 - `size`: 每页数量（默认 20）
-- `categoryId`: 分类 ID（可选，筛选该分类及其子分类下的产品）
+- `category`: 分类名称（可选，筛选该分类下的产品）
 - `keyword`: 搜索关键词（匹配产品名称）
 
 ### 管理员端点（需管理员角色）
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/admin/products | CreateProductRequest | ProductResponse | 创建产品 |
-| PUT | /api/admin/products/{id} | UpdateProductRequest | ProductResponse | 更新产品 |
-| DELETE | /api/admin/products/{id} | — | void | 删除产品（软删除） |
-| GET | /api/admin/products | — | PageResponse\<ProductResponse\> | 管理员产品列表（含 INACTIVE） |
-| POST | /api/admin/categories | CreateCategoryRequest | CategoryResponse | 创建分类 |
-| PUT | /api/admin/categories/{id} | UpdateCategoryRequest | CategoryResponse | 更新分类 |
-| DELETE | /api/admin/categories/{id} | — | void | 删除分类 |
+| POST | /api/v1/admin/products | CreateProductRequest | ProductResponse | 创建产品 |
+| PUT | /api/v1/admin/products/{id} | UpdateProductRequest | ProductResponse | 更新产品 |
+| DELETE | /api/v1/admin/products/{id} | — | void | 删除产品（软删除） |
+| GET | /api/v1/admin/products | — | PageResponse\<ProductResponse\> | 管理员产品列表（含已下架） |
 
 管理员产品列表查询参数：
-- `page`, `size`, `categoryId`, `keyword`（同员工端点）
-- `status`: 产品状态筛选（ACTIVE / INACTIVE / 全部）
+- `page`, `size`, `category`, `keyword`（同员工端点）
+- `status`: 产品状态筛选（0=上架 / 1=下架 / 全部）
 
 ### 文件端点（需认证）
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/files/upload | MultipartFile | FileResponse | 上传图片 |
-| GET | /api/files/{filename} | — | 文件流 | 获取图片 |
+| POST | /api/v1/files/upload | MultipartFile | FileResponse | 上传图片 |
+| GET | /api/v1/files/{filename} | — | 文件流 | 获取图片 |
 
 ### 内部端点（服务间调用，不经过 API 网关）
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/internal/products/{id} | — | ProductResponse | 获取产品信息（含库存） |
-| POST | /api/internal/products/deduct-stock | StockDeductRequest | void | 扣减库存（悲观锁） |
-| POST | /api/internal/products/restore-stock | StockDeductRequest | void | 恢复库存（回滚用） |
+| GET | /api/v1/internal/products/{id} | — | ProductResponse | 获取产品信息（含库存） |
+| POST | /api/v1/internal/products/deduct-stock | StockDeductRequest | void | 扣减库存（悲观锁） |
+| POST | /api/v1/internal/products/restore-stock | StockDeductRequest | void | 恢复库存（回滚用） |

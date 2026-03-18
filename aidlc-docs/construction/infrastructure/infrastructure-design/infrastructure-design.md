@@ -11,11 +11,12 @@ infrastructure/
 ├── .env                        # 实际环境变量（git ignore）
 ├── mysql/
 │   ├── 01-create-databases.sql # 创建 database + 用户授权
-│   ├── 02-auth-schema.sql      # auth_db 表结构
-│   ├── 03-product-schema.sql   # product_db 表结构
-│   ├── 04-points-schema.sql    # points_db 表结构
-│   ├── 05-order-schema.sql     # order_db 表结构
+│   ├── 02-auth-schema.sql      # auth_db 表结构（初始化脚本）
+│   ├── 03-product-schema.sql   # product_db 表结构（初始化脚本）
+│   ├── 04-points-schema.sql    # points_db 表结构（初始化脚本）
+│   ├── 05-order-schema.sql     # order_db 表结构（初始化脚本）
 │   └── 06-seed-data.sql        # 种子数据
+│   # 注意：各服务使用 Flyway 进行数据库版本管理和迁移
 └── nginx/
     └── default.conf            # 前端 Nginx 配置（SPA + API 反向代理）
 ```
@@ -51,12 +52,29 @@ services:
     networks:
       - awsomeshop-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: awsomeshop-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - awsomeshop-net
+
   auth-service:
     build:
-      context: ../auth-service
+      context: ../awsome-shop-auth-service
     container_name: awsomeshop-auth
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       DB_HOST: mysql
@@ -66,12 +84,15 @@ services:
       DB_PASSWORD: ${AUTH_DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
       - awsomeshop-net
 
   product-service:
     build:
-      context: ../product-service
+      context: ../awsome-shop-product-service
     container_name: awsomeshop-product
     depends_on:
       mysql:
@@ -91,7 +112,7 @@ services:
 
   points-service:
     build:
-      context: ../points-service
+      context: ../awsome-shop-points-service
     container_name: awsomeshop-points
     depends_on:
       mysql:
@@ -107,7 +128,7 @@ services:
 
   order-service:
     build:
-      context: ../order-service
+      context: ../awsome-shop-order-service
     container_name: awsomeshop-order
     depends_on:
       mysql:
@@ -134,7 +155,7 @@ services:
 
   api-gateway:
     build:
-      context: ../api-gateway
+      context: ../awsome-shop-gateway-service
     container_name: awsomeshop-gateway
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
@@ -145,7 +166,6 @@ services:
       - order-service
     environment:
       SERVER_PORT: 8080
-      JWT_SECRET: ${JWT_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8001
       PRODUCT_SERVICE_URL: http://product-service:8002
       POINTS_SERVICE_URL: http://points-service:8003
@@ -163,7 +183,7 @@ services:
 
   frontend:
     build:
-      context: ../awsomeshop-frontend
+      context: ../awsome-shop-frontend
     container_name: awsomeshop-frontend
     ports:
       - "${FRONTEND_PORT:-3000}:80"
@@ -212,9 +232,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # API 反向代理：/api/* → api-gateway
-    location /api/ {
-        proxy_pass http://api-gateway:8080;
+    # API 反向代理：/api/v1/* → api-gateway
+    location /api/v1/ {
+        proxy_pass http://api-gateway:8080/api/v1/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -253,6 +273,10 @@ server {
 MYSQL_ROOT_PASSWORD=awsomeshop_root_2026
 MYSQL_PORT=3306
 
+# ===== Redis =====
+REDIS_PASSWORD=awsomeshop_redis_2026
+REDIS_PORT=6379
+
 # ===== Database Credentials =====
 AUTH_DB_NAME=auth_db
 AUTH_DB_USER=auth_user
@@ -289,7 +313,8 @@ MAX_FILE_SIZE=5MB
 
 | 服务 | 容器名 | 说明 |
 |------|--------|------|
-| mysql | awsomeshop-mysql | 数据库 |
+| mysql | awsomeshop-mysql | MySQL 数据库 |
+| redis | awsomeshop-redis | Redis 缓存 |
 | auth-service | awsomeshop-auth | 认证服务 |
 | product-service | awsomeshop-product | 产品服务 |
 | points-service | awsomeshop-points | 积分服务 |
@@ -300,3 +325,18 @@ MAX_FILE_SIZE=5MB
 Docker Compose 项目名 `awsomeshop` 会自动为网络和卷添加前缀：
 - 网络：`awsomeshop_awsomeshop-net`
 - 卷：`awsomeshop_mysql-data`
+
+## 6. 数据库迁移策略
+
+### 初始化
+- Docker 容器首次启动时，通过 `/docker-entrypoint-initdb.d` 目录中的 SQL 脚本初始化数据库结构
+
+### 版本管理
+- 各微服务使用 **Flyway** 进行数据库版本管理和迁移
+- Flyway 脚本位于各服务的 `src/main/resources/db/migration` 目录
+- 版本号命名规范：`V{版本号}__{描述}.sql`（如 `V1__init_schema.sql`）
+
+### 迁移执行
+- 服务启动时自动执行 Flyway 迁移
+- Flyway 会在数据库中创建 `flyway_schema_history` 表记录迁移历史
+- 确保数据库结构变更有版本追踪和回滚能力

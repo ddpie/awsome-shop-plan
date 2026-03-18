@@ -87,9 +87,9 @@ flowchart TD
 
         subgraph P2_U1["Unit 1 frontend"]
             U1_FD["功能设计 ✅"]
-            U1_NFR["NFR需求"]
-            U1_NFRD["NFR设计"]
-            U1_ID["基础设施设计"]
+            U1_NFR["NFR需求 ✅"]
+            U1_NFRD["NFR设计 ✅"]
+            U1_ID["基础设施设计 ✅"]
             U1_CG["代码生成"]
             U1_BT["构建测试"]
         end

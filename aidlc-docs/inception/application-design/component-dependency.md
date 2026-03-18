@@ -2,6 +2,17 @@
 
 ---
 
+## 关键设计更新
+
+1. **BE-CATEGORY 组件已移除**：分类不再是独立组件，现在作为产品的字符串字段
+2. **DA-CATEGORY 已移除**：不再有独立的分类数据访问层
+3. **API网关角色**：
+   - 验证JWT令牌（调用 auth-service 的 `/api/v1/internal/auth/validate`）
+   - 注入请求头：`X-Operator-Id` (用户ID) 和 `X-User-Role` (用户角色)
+   - 转发请求到对应微服务
+
+---
+
 ## 依赖关系矩阵
 
 ### 后端组件依赖
@@ -10,8 +21,7 @@
 |------|------|---------|
 | BE-AUTH | DA-USER, DA-POINTS | 数据访问 |
 | BE-USER | DA-USER | 数据访问 |
-| BE-PRODUCT | DA-PRODUCT, DA-CATEGORY, BE-FILE | 数据访问 + 组件调用 |
-| BE-CATEGORY | DA-CATEGORY, DA-PRODUCT | 数据访问（删除时检查关联） |
+| BE-PRODUCT | DA-PRODUCT, BE-FILE | 数据访问 + 组件调用（分类作为字符串字段，无需独立管理） |
 | BE-POINTS | DA-POINTS, DA-USER | 数据访问 |
 | BE-ORDER | BE-PRODUCT, BE-POINTS, DA-ORDER | 组件调用 + 数据访问 |
 | BE-FILE | 本地文件系统 | 外部资源 |
@@ -21,7 +31,7 @@
 
 | 组件 | 依赖 | 依赖类型 |
 |------|------|---------|
-| API-GATEWAY | JWT 签名密钥（与 auth-service 共享） | 配置共享 |
+| API-GATEWAY | auth-service（令牌验证接口 /api/v1/internal/auth/validate） | 远程服务调用 |
 | API-GATEWAY | auth-service, product-service, points-service, order-service | 请求转发目标 |
 
 ### 前端组件依赖
@@ -29,7 +39,7 @@
 | 组件 | 依赖 | 依赖类型 |
 |------|------|---------|
 | FE-AUTH | FE-COMMON(HTTP客户端) | 公共服务 |
-| FE-PRODUCT | FE-COMMON, FE-AUTH(认证状态) | 公共服务 + 认证 |
+| FE-PRODUCT | FE-COMMON, FE-AUTH(认证状态) | 公共服务 + 认证（分类从产品数据中提取） |
 | FE-POINTS | FE-COMMON, FE-AUTH | 公共服务 + 认证 |
 | FE-ORDER | FE-COMMON, FE-AUTH, FE-POINTS(余额显示) | 公共服务 + 认证 + 数据 |
 | FE-ADMIN | FE-COMMON, FE-AUTH(角色校验) | 公共服务 + 认证 |
@@ -62,9 +72,7 @@
      | BE-AUTH | |BE-  | | BE-      |
      | BE-USER | |PROD | | POINTS   |
      +---------+ |BE-  | | BE-SCHED |
-                 |CATEG| +-+--------+
-                 |BE-  |   |
-                 |FILE |   |
+                 |FILE | +-+--------+
                  +--+--+   |
                     |      |
                +----v------v----+
@@ -85,49 +93,54 @@
 ```
 员工浏览器
   |
-  | 1. POST /api/orders {productId} + JWT令牌
+  | 1. POST /api/v1/order/** {productId} + JWT令牌
   v
 API GATEWAY
-  | 1a. 校验 JWT 令牌有效性
-  | 1b. 提取用户信息（userId, role）
-  | 1c. 转发请求到 order-service（附带用户信息）
+  | 1a. 调用 auth-service 验证令牌：POST /api/v1/internal/auth/validate
+  | 1b. auth-service 返回用户信息（userId, role）
+  | 1c. 网关注入请求头 X-Operator-Id: <userId>
+  | 1d. 转发请求到 order-service
   v
 BE-ORDER (兑换组件)
   |
-  | 2. 查询产品信息和库存
-  +-------> BE-PRODUCT --> DA-PRODUCT --> MySQL(products)
+  | 2. 从 X-Operator-Id 请求头获取用户ID
+  | 3. 查询产品信息和库存（跨服务调用 product-service）
+  +-------> BE-PRODUCT --> DA-PRODUCT --> MySQL(product)
   |
-  | 3. 查询用户积分余额
+  | 4. 查询用户积分余额（跨服务调用 points-service）
   +-------> BE-POINTS --> DA-POINTS --> MySQL(point_balances)
   |
-  | 4. 事务开始
-  | 4a. 扣除积分
+  | 5. 事务开始
+  | 5a. 扣除积分（跨服务调用 points-service）
   +-------> DA-POINTS --> MySQL(point_balances, point_transactions)
-  | 4b. 减少库存
-  +-------> DA-PRODUCT --> MySQL(products)
-  | 4c. 创建兑换记录
+  | 5b. 减少库存（跨服务调用 product-service）
+  +-------> DA-PRODUCT --> MySQL(product)
+  | 5c. 创建兑换记录
   +-------> DA-ORDER --> MySQL(orders)
-  | 4d. 事务提交
+  | 5d. 事务提交
   |
-  | 5. 返回兑换结果
+  | 6. 返回兑换结果
   v
 API GATEWAY → 员工浏览器
 ```
 
-### 管理员操作数据流（经 API 网关权限校验）
+### 管理员操作数据流（服务内部权限校验）
 
 ```
 管理员浏览器
   |
-  | 1. POST /api/admin/* + JWT令牌
+  | 1. POST /api/v1/{service}/** + JWT令牌
   v
 API GATEWAY
-  | 1a. 校验 JWT 令牌有效性
-  | 1b. 提取用户角色
-  | 1c. 校验角色 == ADMIN
+  | 1a. 调用 auth-service 验证令牌：POST /api/v1/internal/auth/validate
+  | 1b. auth-service 返回用户信息（userId, role）
+  | 1c. 网关注入请求头 X-Operator-Id: <userId>
   | 1d. 转发请求到对应微服务
   v
 对应微服务（product-service / points-service / order-service / auth-service）
+  | 从 X-Operator-Id 获取操作人ID
+  | 查询用户角色，内部校验是否为管理员
+  | 根据角色决定是否允许操作
 ```
 
 ### 积分自动发放数据流
@@ -169,11 +182,13 @@ BE-SCHEDULER (调度组件)
 
 依赖方向：
 - FE-* → API-GATEWAY → BE-* （前端通过网关调用后端，单向）
-- BE-ORDER → BE-PRODUCT, BE-POINTS （兑换依赖产品和积分）
+- API-GATEWAY → auth-service（令牌验证，远程服务调用，单向）
+- BE-ORDER → BE-PRODUCT, BE-POINTS （兑换依赖产品和积分，跨服务调用）
 - BE-PRODUCT → BE-FILE （产品依赖文件）
 - BE-SCHEDULER → DA-* （调度器依赖数据访问）
-- BE-AUTH → DA-USER, DA-POINTS （认证依赖用户和积分数据）
-- BE-CATEGORY ↔ DA-PRODUCT （分类删除时检查产品关联，通过数据层查询，非组件循环依赖）
-- API-GATEWAY → auth-service（JWT 密钥共享，配置级依赖，非运行时循环）
+- BE-AUTH → BE-POINTS（注册时初始化积分，跨服务调用 /api/v1/internal/points/init）
+- BE-AUTH → DA-USER（认证依赖用户数据）
+
+**注意**：BE-CATEGORY 组件已移除，分类现在作为产品的字符串字段，不需要独立管理。
 
 **结论**: 无组件级循环依赖 ✅

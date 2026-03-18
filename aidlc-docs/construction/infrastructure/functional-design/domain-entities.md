@@ -1,5 +1,15 @@
 # Unit 7: infrastructure — 数据库 Schema 设计
 
+---
+
+## 关键设计决策
+
+1. **分类简化**：不再有独立的 `categories` 表，分类作为 `product` 表的 VARCHAR 字段存储
+2. **表名规范**：使用单数形式，如 `product` 而非 `products`
+3. **数据库隔离**：每个微服务使用独立的 database，通过逻辑ID进行跨库关联
+
+---
+
 ## 数据库隔离策略
 
 同一个 MySQL 实例，每个微服务使用独立的 database：
@@ -7,7 +17,7 @@
 | Database | 所属服务 | 数据表 |
 |----------|---------|--------|
 | auth_db | auth-service | users |
-| product_db | product-service | products, categories |
+| product_db | product-service | product |
 | points_db | points-service | point_balances, point_transactions, system_configs, distribution_batches |
 | order_db | order-service | orders |
 
@@ -37,21 +47,7 @@
 
 ## product_db
 
-### categories 表
-
-| 字段 | 类型 | 约束 | 说明 |
-|------|------|------|------|
-| id | BIGINT | PK, AUTO_INCREMENT | 分类ID |
-| name | VARCHAR(100) | NOT NULL | 分类名称 |
-| parent_id | BIGINT | NULL, FK → categories(id) | 父分类ID（NULL 为顶级） |
-| sort_order | INT | NOT NULL, DEFAULT 0 | 排序序号 |
-| created_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 创建时间 |
-| updated_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
-
-索引：
-- `idx_categories_parent_id` ON (parent_id)
-
-### products 表
+### product 表
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
@@ -61,15 +57,15 @@
 | points_price | INT | NOT NULL | 所需积分 |
 | stock | INT | NOT NULL, DEFAULT 0 | 库存数量 |
 | image_url | VARCHAR(500) | NULL | 产品图片URL |
-| category_id | BIGINT | NOT NULL, FK → categories(id) | 所属分类 |
+| category | VARCHAR(100) | NOT NULL | 产品分类（字符串字段） |
 | status | ENUM('ACTIVE','INACTIVE') | NOT NULL, DEFAULT 'ACTIVE' | 产品状态 |
 | created_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP | 创建时间 |
 | updated_at | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE | 更新时间 |
 
 索引：
-- `idx_products_category_id` ON (category_id)
-- `idx_products_name` ON (name)
-- `idx_products_status` ON (status)
+- `idx_product_category` ON (category)
+- `idx_product_name` ON (name)
+- `idx_product_status` ON (status)
 
 ---
 
@@ -171,4 +167,4 @@
 | points_db.point_transactions | operator_id | auth_db.users.id | 操作人 |
 | points_db.point_transactions | reference_id | order_db.orders.id | 兑换扣分关联订单 |
 | order_db.orders | user_id | auth_db.users.id | 订单关联用户 |
-| order_db.orders | product_id | product_db.products.id | 订单关联产品 |
+| order_db.orders | product_id | product_db.product.id | 订单关联产品 |

@@ -5,7 +5,7 @@
 ## 1. 积分余额初始化
 
 ```
-auth-service → POST /api/internal/points/init (InitPointsRequest)
+auth-service → POST /api/v1/internal/point/init (InitPointsRequest)
   │
   ├── 1. 参数校验
   │     └── userId: > 0
@@ -36,7 +36,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 2. 查询当前用户积分余额
 
 ```
-客户端 → GET /api/points/balance
+客户端 → GET /api/v1/point/balance
   │
   ├── 1. 获取用户身份
   │     └── 从请求头 X-User-Id 获取 userId
@@ -44,7 +44,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
   ├── 2. 查询余额
   │     └── 按 userId 查询 point_balances
   │         ├── 存在 → 返回 PointBalanceResponse
-  │         └── 不存在 → 返回 POINTS_001 错误
+  │         └── 不存在 → 返回 NOT_FOUND_001 错误
   │
   └── 3. 返回 PointBalanceResponse
 ```
@@ -54,7 +54,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 3. 查询当前用户积分变动历史
 
 ```
-客户端 → GET /api/points/transactions?page=0&size=20
+客户端 → GET /api/v1/point/transactions?page=0&size=20
   │
   ├── 1. 获取用户身份
   │     └── 从请求头 X-User-Id 获取 userId
@@ -74,7 +74,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 4. 管理员 — 查看所有员工积分余额
 
 ```
-管理员 → GET /api/admin/points/balances?page=0&size=20&keyword=xxx
+管理员 → GET /api/v1/point/admin/balances?page=0&size=20&keyword=xxx
   │
   ├── 1. 分页参数处理
   │     ├── page: 默认 0，最小 0
@@ -97,7 +97,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 5. 管理员 — 查看指定员工积分变动明细
 
 ```
-管理员 → GET /api/admin/points/transactions/{userId}?page=0&size=20&type=DISTRIBUTION
+管理员 → GET /api/v1/point/admin/transactions/{userId}?page=0&size=20&type=DISTRIBUTION
   │
   ├── 1. 参数校验
   │     └── userId: > 0
@@ -122,7 +122,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 6. 管理员 — 手动调整员工积分
 
 ```
-管理员 → POST /api/admin/points/adjust (AdjustPointsRequest)
+管理员 → POST /api/v1/point/admin/adjust (AdjustPointsRequest)
   │
   ├── 1. 参数校验
   │     ├── userId: > 0
@@ -131,11 +131,11 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
   │
   ├── 2. 查询当前余额（悲观锁）
   │     └── SELECT ... FROM point_balances WHERE user_id = ? FOR UPDATE
-  │         └── 不存在 → 返回 POINTS_001 错误
+  │         └── 不存在 → 返回 NOT_FOUND_001 错误
   │
   ├── 3. 余额校验（扣除场景）
   │     └── 如果 amount < 0:
-  │         └── balance + amount < 0 → 返回 POINTS_002 错误（余额不足）
+  │         └── balance + amount < 0 → 返回 BAD_REQUEST_001 错误（余额不足）
   │
   ├── 4. 更新余额
   │     └── UPDATE point_balances SET balance = balance + amount
@@ -159,7 +159,7 @@ auth-service → POST /api/internal/points/init (InitPointsRequest)
 ## 7. 兑换扣除积分（内部接口）
 
 ```
-order-service → POST /api/internal/points/deduct (DeductPointsRequest)
+order-service → POST /api/v1/internal/point/deduct (DeductPointsRequest)
   │
   ├── 1. 参数校验
   │     ├── userId: > 0
@@ -168,10 +168,10 @@ order-service → POST /api/internal/points/deduct (DeductPointsRequest)
   │
   ├── 2. 查询当前余额（悲观锁）
   │     └── SELECT ... FROM point_balances WHERE user_id = ? FOR UPDATE
-  │         └── 不存在 → 返回 POINTS_001 错误
+  │         └── 不存在 → 返回 NOT_FOUND_001 错误
   │
   ├── 3. 余额校验
-  │     └── balance < amount → 返回 POINTS_003 错误（积分不足）
+  │     └── balance < amount → 返回 BAD_REQUEST_002 错误（积分不足）
   │
   ├── 4. 扣除余额
   │     └── UPDATE point_balances SET balance = balance - amount
@@ -195,19 +195,19 @@ order-service → POST /api/internal/points/deduct (DeductPointsRequest)
 ## 8. 兑换回滚积分（内部接口）
 
 ```
-order-service → POST /api/internal/points/rollback (RollbackDeductionRequest)
+order-service → POST /api/v1/internal/point/rollback (RollbackDeductionRequest)
   │
   ├── 1. 参数校验
   │     └── transactionId: > 0
   │
   ├── 2. 查询原始扣除记录
   │     └── 按 transactionId 查询 point_transactions
-  │         ├── 不存在 → 返回 POINTS_004 错误
-  │         └── type ≠ REDEMPTION → 返回 POINTS_005 错误（只能回滚兑换扣除）
+  │         ├── 不存在 → 返回 NOT_FOUND_002 错误
+  │         └── type ≠ REDEMPTION → 返回 BAD_REQUEST_003 错误（只能回滚兑换扣除）
   │
   ├── 3. 检查是否已回滚
   │     └── 查询是否存在 type=ROLLBACK 且 referenceId=原始记录的 referenceId 的记录
-  │         └── 已存在 → 返回 POINTS_006 错误（不可重复回滚）
+  │         └── 已存在 → 返回 CONFLICT_001 错误（不可重复回滚）
   │
   ├── 4. 恢复余额（悲观锁）
   │     ├── SELECT ... FROM point_balances WHERE user_id = ? FOR UPDATE
@@ -231,7 +231,7 @@ order-service → POST /api/internal/points/rollback (RollbackDeductionRequest)
 ## 9. 查询指定用户积分余额（内部接口）
 
 ```
-order-service → GET /api/internal/points/balance/{userId}
+order-service → GET /api/v1/internal/point/balance/{userId}
   │
   ├── 1. 参数校验
   │     └── userId: > 0
@@ -239,7 +239,7 @@ order-service → GET /api/internal/points/balance/{userId}
   ├── 2. 查询余额
   │     └── 按 userId 查询 point_balances
   │         ├── 存在 → 返回 PointBalanceResponse
-  │         └── 不存在 → 返回 POINTS_001 错误
+  │         └── 不存在 → 返回 NOT_FOUND_001 错误
   │
   └── 3. 返回 PointBalanceResponse
 ```
@@ -256,12 +256,12 @@ BE-SCHEDULER（cron: 0 0 2 1 * ? — 每月1日凌晨2:00）
   │         └── 不存在 → 使用默认值 100
   │
   ├── 2. 查询所有余额记录
-  │     └── SELECT * FROM point_balances（查询所有已有余额记录的用户）
+  │     └── SELECT * FROM point_balances（查询 point_balances 表中所有记录）
   │         说明：不依赖 auth-service（Q3=B），仅为已初始化积分的用户发放
   │
   ├── 3. 批量发放
   │     └── 对每位用户（逐条处理，单条失败不影响其他用户）：
-  │         ├── a. 更新余额: UPDATE point_balances SET balance = balance + amount
+  │         ├── a. 更新余额: UPDATE point_balances SET balance = balance + amount（原子更新）
   │         ├── b. 创建变动记录:
   │         │     ├── type = DISTRIBUTION
   │         │     ├── amount = 发放额度（正数）
@@ -286,7 +286,7 @@ BE-SCHEDULER（cron: 0 0 2 1 * ? — 每月1日凌晨2:00）
 ## 11. 管理员 — 获取发放配置
 
 ```
-管理员 → GET /api/admin/points/config
+管理员 → GET /api/v1/point/admin/config
   │
   ├── 1. 查询配置
   │     └── 从 system_configs 查询 config_key = 'points.distribution.amount'
@@ -301,7 +301,7 @@ BE-SCHEDULER（cron: 0 0 2 1 * ? — 每月1日凌晨2:00）
 ## 12. 管理员 — 更新发放配置
 
 ```
-管理员 → PUT /api/admin/points/config (UpdateDistributionConfigRequest)
+管理员 → PUT /api/v1/point/admin/config (UpdateDistributionConfigRequest)
   │
   ├── 1. 参数校验
   │     └── amount: > 0

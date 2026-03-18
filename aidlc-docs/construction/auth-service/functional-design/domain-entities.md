@@ -100,23 +100,29 @@ UserStatus:
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/auth/register | RegisterRequest | UserResponse | 用户注册 |
-| POST | /api/auth/login | LoginRequest | TokenResponse | 用户登录 |
+| POST | /api/v1/public/auth/register | RegisterRequest | UserResponse | 用户注册 |
+| POST | /api/v1/public/auth/login | LoginRequest | TokenResponse | 用户登录 |
 
 ### 认证端点
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| POST | /api/auth/logout | — | void | 退出登录 |
-| GET | /api/users/me | — | UserResponse | 获取当前用户信息 |
+| POST | /api/v1/auth/logout | — | void | 退出登录 |
+| GET | /api/v1/auth/users/me | — | UserResponse | 获取当前用户信息 |
 
 ### 管理员端点
 
 | 方法 | 路径 | 请求体 | 响应体 | 说明 |
 |------|------|--------|--------|------|
-| GET | /api/admin/users | — | PageResponse\<UserResponse\> | 用户列表（分页、搜索） |
-| GET | /api/admin/users/{id} | — | UserResponse | 获取用户详情 |
-| PUT | /api/admin/users/{id} | UpdateUserRequest | UserResponse | 更新用户信息/状态 |
+| GET | /api/v1/auth/admin/users | — | PageResponse\<UserResponse\> | 用户列表（分页、搜索） |
+| GET | /api/v1/auth/admin/users/{id} | — | UserResponse | 获取用户详情 |
+| PUT | /api/v1/auth/admin/users/{id} | UpdateUserRequest | UserResponse | 更新用户信息/状态 |
+
+### 内部端点
+
+| 方法 | 路径 | 请求体 | 响应体 | 说明 |
+|------|------|--------|--------|------|
+| POST | /api/v1/internal/auth/validate | { token: String } | { success: Boolean, operatorId: Long, role: String, message: String } | 令牌验证（供 API 网关调用） |
 
 查询参数（用户列表）：
 - `page`: 页码（默认 0）

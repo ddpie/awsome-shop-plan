@@ -35,16 +35,17 @@
 - 预校验通过后再执行扣除操作
 - 预校验可快速拦截不满足条件的请求，减少锁竞争
 
-### BR-ORDER-003: 扣除顺序 — 先积分后库存
-- 先扣除积分（points-service），再扣减库存（product-service）
-- 库存扣减失败时，回滚积分
+### BR-ORDER-003: Saga 执行顺序 — 先积分后库存
+- Saga 步骤 1：扣除积分（points-service）
+- Saga 步骤 2：扣减库存（product-service）
+- 库存扣减失败时，逆序补偿回滚积分
 - 积分是虚拟资产，回滚更安全可靠
 
-### BR-ORDER-004: 补偿回滚策略
-- 库存扣减失败 → 回滚积分 + 删除订单记录
-- 积分回滚失败 → 记录错误日志，需人工介入
-- 库存恢复失败 → 记录错误日志，需人工介入
-- 采用"最大努力"补偿策略，适合 MVP 阶段
+### BR-ORDER-004: Saga 最大努力补偿策略
+- 库存扣减失败 → Saga 补偿：回滚积分 + 删除订单记录
+- 补偿失败处理：记录错误日志 + 人工介入（MVP 最大努力补偿模式）
+- 订单取消时：Saga 补偿回滚积分和库存
+- 不保证强一致性，适合 MVP 阶段
 
 ### BR-ORDER-005: 产品快照
 - 创建订单时，将产品名称和图片 URL 冗余存储到订单记录
@@ -60,12 +61,12 @@
 - 非法流转返回 ORDER_009 错误
 - COMPLETED 和 CANCELLED 为终态，不可再变更
 
-### BR-ORDER-007: 取消自动退还
-- 管理员将订单状态更新为 CANCELLED 时，自动执行：
+### BR-ORDER-007: 取消自动退还（Saga 补偿）
+- 管理员将订单状态更新为 CANCELLED 时，自动执行 Saga 补偿：
   - 回滚积分（调用 points-service 回滚接口）
   - 恢复库存（调用 product-service 恢复接口）
-- 退还操作失败不阻塞状态更新
-- 失败情况记录日志，由管理员人工处理
+- 补偿操作失败时：记录日志 + 人工介入（最大努力补偿）
+- 订单状态仍更新为 CANCELLED，不阻塞状态流转
 
 ### BR-ORDER-008: 订单归属校验
 - 员工查看兑换详情时，校验订单的 userId 与当前用户一致
@@ -81,21 +82,21 @@
 
 | 错误码 | HTTP 状态码 | 消息 | 触发场景 |
 |--------|------------|------|---------|
-| ORDER_001 | 404 | 产品不存在 | 兑换时产品 ID 无效 |
-| ORDER_002 | 400 | 产品已下架 | 兑换时产品 status ≠ ACTIVE |
-| ORDER_003 | 400 | 库存不足 | 兑换时产品库存 ≤ 0 |
-| ORDER_004 | 400 | 积分账户不存在 | 兑换时用户无积分余额记录 |
-| ORDER_005 | 400 | 积分不足，无法兑换 | 兑换时积分余额 < 所需积分 |
-| ORDER_006 | 404 | 兑换记录不存在 | 查询/操作时订单 ID 无效 |
-| ORDER_007 | 403 | 无权查看此兑换记录 | 员工查看他人订单 |
-| ORDER_008 | 500 | 兑换处理失败，请稍后重试 | 跨服务调用超时或异常 |
-| ORDER_009 | 400 | 非法状态变更 | 状态流转不符合规则 |
-| ORDER_010 | 500 | 取消退还处理异常 | 取消时积分回滚或库存恢复失败（订单仍标记为 CANCELLED） |
+| NOT_FOUND_001 | 404 | 产品不存在 | 兑换时产品 ID 无效 |
+| NOT_FOUND_002 | 404 | 兑换记录不存在 | 查询/操作时订单 ID 无效 |
+| BAD_REQUEST_001 | 400 | 产品已下架 | 兑换时产品 status ≠ ACTIVE |
+| BAD_REQUEST_002 | 400 | 库存不足 | 兑换时产品库存 ≤ 0 |
+| BAD_REQUEST_003 | 400 | 积分账户不存在 | 兑换时用户无积分余额记录 |
+| BAD_REQUEST_004 | 400 | 积分不足，无法兑换 | 兑换时积分余额 < 所需积分 |
+| BAD_REQUEST_005 | 400 | 非法状态变更 | 状态流转不符合规则 |
+| FORBIDDEN_001 | 403 | 无权查看此兑换记录 | 员工查看他人订单 |
+| INTERNAL_SERVER_ERROR_001 | 500 | 兑换处理失败，请稍后重试 | 跨服务调用超时或异常 |
+| INTERNAL_SERVER_ERROR_002 | 500 | 取消退还处理异常 | Saga 补偿失败（订单仍标记为 CANCELLED） |
 
 ### 统一错误响应格式
 ```json
 {
-  "code": "ORDER_001",
+  "code": "NOT_FOUND_001",
   "message": "产品不存在",
   "data": null
 }
@@ -136,18 +137,18 @@
 ## 5. 跨服务交互约定
 
 ### order-service → product-service
-- 查询产品：`GET http://product-service:8002/api/internal/products/{id}`
-- 扣减库存：`POST http://product-service:8002/api/internal/products/deduct-stock`
-- 恢复库存：`POST http://product-service:8002/api/internal/products/restore-stock`
+- 查询产品：`GET http://product-service:8002/api/v1/internal/product/{id}`
+- 扣减库存：`POST http://product-service:8002/api/v1/internal/product/deduct-stock`
+- 恢复库存：`POST http://product-service:8002/api/v1/internal/product/restore-stock`
 - 超时：3 秒
 
 ### order-service → points-service
-- 查询余额：`GET http://points-service:8003/api/internal/points/balance/{userId}`
-- 扣除积分：`POST http://points-service:8003/api/internal/points/deduct`
-- 回滚积分：`POST http://points-service:8003/api/internal/points/rollback`
+- 查询余额：`GET http://points-service:8003/api/v1/internal/point/balance/{userId}`
+- 扣除积分：`POST http://points-service:8003/api/v1/internal/point/deduct`
+- 回滚积分：`POST http://points-service:8003/api/v1/internal/point/rollback`
 - 超时：3 秒
 
 ### 内部接口安全
-- 所有内部接口（/api/internal/*）不经过 API 网关
+- 所有内部接口（/api/v1/internal/*）不经过 API 网关
 - 仅在 Docker 内部网络中可访问
 - 不需要 JWT 认证（服务间信任）
