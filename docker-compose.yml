@@ -34,6 +34,7 @@ services:
     ports:
       - "8001:8001"
     environment:
+      SPRING_PROFILES_ACTIVE: local,docker
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: awsome_shop_auth
